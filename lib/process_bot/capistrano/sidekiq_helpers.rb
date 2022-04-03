@@ -1,4 +1,4 @@
-module ProcessBot::Sidekiq::Helpers
+module ProcessBot::Capistrano::SidekiqHelpers
   def sidekiq_require
     if fetch(:sidekiq_require)
       "--require #{fetch(:sidekiq_require)}"

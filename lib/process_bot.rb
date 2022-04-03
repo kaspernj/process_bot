@@ -4,5 +4,6 @@ require_relative "process_bot/version"
 
 module ProcessBot
   class Error < StandardError; end
-  # Your code goes here...
+
+  autoload :Capistrano, "#{__dir__}/process_bot/capistrano.rb"
 end
