@@ -6,7 +6,7 @@ namespace :process_bot do
     task :start do
       on roles(fetch(:puma_role)) do |role|
         git_plugin.puma_switch_user(role) do
-          if test "[ -f #{fetch(:puma_pid)} ]" and test :kill, "-0 $( cat #{fetch(:puma_pid)} )"
+          if test("[ -f #{fetch(:puma_pid)} ]") && test(:kill, "-0 $( cat #{fetch(:puma_pid)} )")
             info "Puma is already running"
           else
             within current_path do
@@ -24,7 +24,9 @@ namespace :process_bot do
                   "--control-token foobar"
                 ]
 
-                command = "/usr/bin/screen -dmS puma-#{latest_release_version} bash -c 'cd #{release_path} && #{SSHKit.config.command_map.prefix[:puma].join(" ")} puma #{puma_args.join(" ")}'"
+                command = "/usr/bin/screen -dmS puma-#{latest_release_version} " \
+                  "bash -c 'cd #{release_path} && #{SSHKit.config.command_map.prefix[:puma].join(" ")} puma #{puma_args.join(" ")}'"
+
                 execute command
               end
             end
@@ -36,7 +38,7 @@ namespace :process_bot do
     %w[halt stop status].map do |command|
       desc "#{command} puma"
       task command do
-        on roles (fetch(:puma_role)) do |role|
+        on roles(fetch(:puma_role)) do |role|
           within current_path do
             git_plugin.puma_switch_user(role) do
               with rack_env: fetch(:puma_env) do
@@ -48,7 +50,7 @@ namespace :process_bot do
                     execute :rm, fetch(:puma_pid)
                   end
                 else
-                  #pid file not found, so puma is probably not running or it using another pidfile
+                  # pid file not found, so puma is probably not running or it using another pidfile
                   warn "Puma not running"
                 end
               end
@@ -61,12 +63,12 @@ namespace :process_bot do
     %w[phased-restart restart].map do |command|
       desc "#{command} puma"
       task command do
-        on roles (fetch(:puma_role)) do |role|
+        on roles(fetch(:puma_role)) do |role|
           within current_path do
             git_plugin.puma_switch_user(role) do
               with rack_env: fetch(:puma_env) do
                 if git_plugin.puma_running?
-                  # NOTE pid exist but state file is nonsense, so ignore that case
+                  # NOTE: pid exist but state file is nonsense, so ignore that case
                   git_plugin.run_puma_command(command)
                 else
                   # Puma is not running or state file is not present : Run it
@@ -79,6 +81,7 @@ namespace :process_bot do
       end
     end
 
+    desc "Restarts Puma phased if using workers and preload and otherwise a normal restart."
     task :smart_restart do
       if !fetch(:puma_preload_app) && fetch(:puma_workers, 0).to_i > 1
         invoke "process_bot:puma:phased-restart"

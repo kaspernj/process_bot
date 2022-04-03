@@ -1,6 +1,7 @@
 git_plugin = self
 
 namespace :load do
+  desc "Default variables for Sidekiq"
   task :defaults do
     set :sidekiq_default_hooks, true
 
@@ -19,7 +20,7 @@ namespace :load do
     # Bundler integration
     set :bundle_bins, fetch(:bundle_bins).to_a.concat(%w[sidekiq sidekiqctl])
     # Init system integration
-    set :init_system, -> { nil }
+    set :init_system, -> {}
     # systemd integration
     set :service_unit_name, "sidekiq-#{fetch(:stage)}.service"
     set :upstart_service_name, "sidekiq"
@@ -28,7 +29,7 @@ end
 
 namespace :process_bot do
   namespace :sidekiq do
-    desc 'Quiet sidekiq (stop fetching new tasks from Redis)'
+    desc "Quiet sidekiq (stop fetching new tasks from Redis)"
     task :quiet do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
@@ -39,7 +40,7 @@ namespace :process_bot do
       end
     end
 
-    desc 'Stop sidekiq (graceful shutdown within timeout, put unfinished tasks back to Redis)'
+    desc "Stop Sidekiq (graceful shutdown within timeout, put unfinished tasks back to Redis)"
     task :stop do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
@@ -50,6 +51,7 @@ namespace :process_bot do
       end
     end
 
+    desc "Stops Sidekiq after a set amount of time"
     task :stop_after_time do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
@@ -60,7 +62,7 @@ namespace :process_bot do
       end
     end
 
-    desc 'Start sidekiq'
+    desc "Start sidekiq"
     task :start do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
@@ -72,7 +74,7 @@ namespace :process_bot do
       end
     end
 
-    desc 'Restart sidekiq'
+    desc "Restart sidekiq"
     task :restart do
       invoke! "process_bot:sidekiq:stop"
       invoke! "process_bot:sidekiq:start"

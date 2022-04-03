@@ -6,6 +6,7 @@ AllCops:
 
 require:
   - rubocop-performance
+  - rubocop-rake
   - rubocop-rspec
 
 Layout/AccessModifierIndentation:
@@ -25,6 +26,9 @@ Layout/EmptyLinesAroundArguments:
 
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
+
+Layout/LineEndStringConcatenationIndentation:
+  EnforcedStyle: indented
 
 Layout/LineLength:
   Max: 160
@@ -76,10 +80,6 @@ Metrics/ParameterLists:
 
 Metrics/PerceivedComplexity:
   Max: 12
-
-# .find_each is not the same as .each
-Rails/FindEach:
-  Enabled: false
 
 RSpec/AnyInstance:
   Enabled: false

@@ -1,44 +1,36 @@
 module ProcessBot::Capistrano::SidekiqHelpers
   def sidekiq_require
-    if fetch(:sidekiq_require)
-      "--require #{fetch(:sidekiq_require)}"
-    end
+    "--require #{fetch(:sidekiq_require)}" if fetch(:sidekiq_require)
   end
 
   def sidekiq_config
-    if fetch(:sidekiq_config)
-      "--config #{fetch(:sidekiq_config)}"
-    end
+    "--config #{fetch(:sidekiq_config)}" if fetch(:sidekiq_config)
   end
 
   def sidekiq_concurrency
-    if fetch(:sidekiq_concurrency)
-      "--concurrency #{fetch(:sidekiq_concurrency)}"
-    end
+    "--concurrency #{fetch(:sidekiq_concurrency)}" if fetch(:sidekiq_concurrency)
   end
 
   def sidekiq_queues
     Array(fetch(:sidekiq_queue)).map do |queue|
       "--queue #{queue}"
-    end.join(' ')
+    end.join(" ")
   end
 
   def sidekiq_logfile
     fetch(:sidekiq_log)
   end
 
-  def switch_user(role)
+  def switch_user(role, &block)
     su_user = sidekiq_user(role)
     if su_user == role.user
       yield
     else
-      as su_user do
-        yield
-      end
+      as su_user, &block
     end
   end
 
-  VALID_SIGNALS = ["TERM", "TSTP"]
+  VALID_SIGNALS = ["TERM", "TSTP"].freeze
   def stop_sidekiq(pid:, signal:)
     raise "Invalid PID: #{pid}" unless pid.to_s.match?(/\A\d+\Z/)
     raise "Invalid signal: #{signal}" unless VALID_SIGNALS.include?(signal)
@@ -94,10 +86,10 @@ module ProcessBot::Capistrano::SidekiqHelpers
     backend.capture(:echo, SSHKit.config.command_map[:bundle]).strip
   end
 
-  def start_sidekiq(idx = 0)
+  def start_sidekiq(idx = 0) # rubocop:disable Metrics/AbcSize
     args = []
     args.push "--environment #{fetch(:sidekiq_env)}"
-    #args.push "--logfile #{fetch(:sidekiq_log)}" if fetch(:sidekiq_log)
+    # args.push "--logfile #{fetch(:sidekiq_log)}" if fetch(:sidekiq_log)
     args.push "--require #{fetch(:sidekiq_require)}" if fetch(:sidekiq_require)
     args.push "--tag #{fetch(:sidekiq_tag)}" if fetch(:sidekiq_tag)
     Array(fetch(:sidekiq_queue)).each do |queue|
@@ -122,7 +114,8 @@ module ProcessBot::Capistrano::SidekiqHelpers
     screen_args << "-L -Logfile #{fetch(:sidekiq_log)}" if fetch(:sidekiq_log)
 
     # command = "/usr/bin/tmux new -d -s sidekiq#{idx} '#{SSHKit.config.command_map.prefix[:sidekiq].join(" ")} sidekiq #{args.compact.join(' ')}'"
-    command = "/usr/bin/screen #{screen_args.join(" ")} bash -c 'cd #{release_path} && #{SSHKit.config.command_map.prefix[:sidekiq].join(" ")} sidekiq #{args.compact.join(' ')}'"
+    command = "/usr/bin/screen #{screen_args.join(" ")} " \
+      "bash -c 'cd #{release_path} && #{SSHKit.config.command_map.prefix[:sidekiq].join(" ")} sidekiq #{args.compact.join(' ')}'"
 
     puts "WARNING: A known bug prevents Sidekiq from starting when pty is set (which it is)" if fetch(:pty)
 
