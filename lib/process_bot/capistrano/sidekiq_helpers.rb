@@ -45,7 +45,7 @@ module ProcessBot::Capistrano::SidekiqHelpers
     time = ENV["STOP_AFTER_TIME"] || fetch(:sidekiq_stop_after_time)
     raise "Invalid time: #{time}" unless time.to_s.match?(/\A\d+\Z/)
 
-    backend.execute "screen -dmS stopsidekiq#{pid} sleep #{time}; kill -#{signal} #{pid}"
+    backend.execute "screen -dmS stopsidekiq#{pid} bash -c \"sleep #{time} && kill -#{signal} #{pid}\""
   end
 
   def running_sidekiq_processes
