@@ -47,6 +47,7 @@ GEM
     rubocop-rspec (2.9.0)
       rubocop (~> 1.19)
     ruby-progressbar (1.11.0)
+    string-cases (0.0.4)
     unicode-display_width (2.1.0)
 
 PLATFORMS
@@ -60,6 +61,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rake
   rubocop-rspec
+  string-cases
 
 BUNDLED WITH
    2.3.8

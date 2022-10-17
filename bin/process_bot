@@ -1,3 +1,35 @@
 #!/usr/bin/env ruby
 
-puts "PROCESS BOT STUB!"
+require "pathname"
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile",
+  Pathname.new(__FILE__).realpath)
+
+require "bundler/setup"
+require "optparse"
+require "string-cases"
+require_relative "../lib/process_bot"
+
+options = {}
+
+OptionParser
+  .new do |opts|
+    opts.banner = "Usage: process_bot [options]"
+
+    opts.on("-iID", "--id=ID", "The ID of the instance") do |value|
+      options[:id] = value
+    end
+
+    opts.on("-hHANDLER", "--handler=HANDLER", "Set handler") do |value|
+      options[:handler] = value
+    end
+
+    opts.on("-v", "--verbose", "Run verbosely") do |value|
+      options[:verbose] = value
+    end
+  end
+  .parse!
+
+ProcessBot::Process
+  .new(**options)
+  .execute!
