@@ -1,3 +1,36 @@
 #!/usr/bin/env ruby
 
-puts "PROCESS BOT STUB!"
+require "pathname"
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile",
+  Pathname.new(__FILE__).realpath)
+
+require "bundler/setup"
+require "optparse"
+require "string-cases"
+require_relative "../lib/process_bot"
+
+options = ProcessBot::Options.new
+argv_i = 0
+
+while argv_i < ARGV.length
+  arg = ARGV.fetch(argv_i)
+
+  if (match = arg.match(/\A--(.+)\Z/))
+    key = match[1].tr("-", "_").to_sym
+    argv_i += 1
+    value = ARGV.fetch(argv_i)
+
+    options.set(key, value)
+  else
+    raise "Unknown option: #{arg}"
+  end
+
+  argv_i += 1
+end
+
+pp options.options
+
+ProcessBot::Process
+  .new(options)
+  .execute!

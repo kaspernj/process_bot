@@ -1,9 +1,5 @@
 class ProcessBot::Capistrano::Puma < Capistrano::Plugin
-  include ::Capistrano::PumaCommon
-
-  def register_hooks
-    after "deploy:finished", "process_bot:puma:smart_restart"
-  end
+  include ::ProcessBot::Capistrano::Puma::Common
 
   def define_tasks
     eval_rakefile File.expand_path("./puma.rake", __dir__)
