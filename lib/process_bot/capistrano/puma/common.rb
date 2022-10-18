@@ -1,21 +1,19 @@
 module ProcessBot::Capistrano::Puma::Common
-  def puma_switch_user(role, &block)
+  def puma_switch_user(role)
     user = puma_user(role)
     if user == role.user
-      block.call
+      yield
     else
-      backend.as user do
-        block.call
-      end
+      backend.as user, &block
     end
   end
 
   def puma_user(role)
     properties = role.properties
     properties.fetch(:puma_user) || # local property for puma only
-        fetch(:puma_user) ||
-        properties.fetch(:run_as) || # global property across multiple capistrano gems
-        role.user
+      fetch(:puma_user) ||
+      properties.fetch(:run_as) || # global property across multiple capistrano gems
+      role.user
   end
 
   def puma_bind
@@ -27,20 +25,20 @@ module ProcessBot::Capistrano::Puma::Common
   def compiled_template_puma(from, role)
     @role = role
     file = [
-        "lib/capistrano/templates/#{from}-#{role.hostname}-#{fetch(:stage)}.rb",
-        "lib/capistrano/templates/#{from}-#{role.hostname}.rb",
-        "lib/capistrano/templates/#{from}-#{fetch(:stage)}.rb",
-        "lib/capistrano/templates/#{from}.rb.erb",
-        "lib/capistrano/templates/#{from}.rb",
-        "lib/capistrano/templates/#{from}.erb",
-        "config/deploy/templates/#{from}.rb.erb",
-        "config/deploy/templates/#{from}.rb",
-        "config/deploy/templates/#{from}.erb",
-        File.expand_path("../templates/#{from}.erb", __FILE__),
-        File.expand_path("../templates/#{from}.rb.erb", __FILE__)
+      "lib/capistrano/templates/#{from}-#{role.hostname}-#{fetch(:stage)}.rb",
+      "lib/capistrano/templates/#{from}-#{role.hostname}.rb",
+      "lib/capistrano/templates/#{from}-#{fetch(:stage)}.rb",
+      "lib/capistrano/templates/#{from}.rb.erb",
+      "lib/capistrano/templates/#{from}.rb",
+      "lib/capistrano/templates/#{from}.erb",
+      "config/deploy/templates/#{from}.rb.erb",
+      "config/deploy/templates/#{from}.rb",
+      "config/deploy/templates/#{from}.erb",
+      File.expand_path("../templates/#{from}.erb", __FILE__),
+      File.expand_path("../templates/#{from}.rb.erb", __FILE__)
     ].detect { |path| File.file?(path) }
     erb = File.read(file)
-    StringIO.new(ERB.new(erb, nil, '-').result(binding))
+    StringIO.new(ERB.new(erb, trim_mode: "-").result(binding))
   end
 
   def template_puma(from, to, role)
@@ -72,7 +70,7 @@ module ProcessBot::Capistrano::Puma::Common
       end
     end
 
-    private
+  private
 
     def localize_address(address)
       address.gsub(/0\.0\.0\.0(.+)/, "127.0.0.1\\1")

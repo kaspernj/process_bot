@@ -17,7 +17,7 @@ while argv_i < ARGV.length
   arg = ARGV.fetch(argv_i)
 
   if (match = arg.match(/\A--(.+)\Z/))
-    key = match[1].gsub("-", "_").to_sym
+    key = match[1].tr("-", "_").to_sym
     argv_i += 1
     value = ARGV.fetch(argv_i)
 

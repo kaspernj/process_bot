@@ -30,7 +30,7 @@ class ProcessBot::Process::Handlers::Sidekiq
     set :sidekiq_options_per_process, nil
   end
 
-  def command
+  def command # rubocop:disable Metrics/AbcSize
     args = []
     args.push "--environment #{fetch(:sidekiq_env)}"
     args.push "--require #{fetch(:sidekiq_require)}" if options.present?(:sidekiq_require)
