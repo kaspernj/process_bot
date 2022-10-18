@@ -99,7 +99,8 @@ module ProcessBot::Capistrano::SidekiqHelpers
       "--handler", "sidekiq",
       "--bundle-prefix", SSHKit.config.command_map.prefix[:bundle].join(" "),
       "--sidekiq-environment", fetch(:sidekiq_env),
-      "--port", 7050 + idx
+      "--port", 7050 + idx,
+      "--release-path", release_path
     ]
     args += ["--log-file-path", fetch(:sidekiq_log)] if fetch(:sidekiq_log)
     args += ["--sidekiq-require", fetch(:sidekiq_require)] if fetch(:sidekiq_require)

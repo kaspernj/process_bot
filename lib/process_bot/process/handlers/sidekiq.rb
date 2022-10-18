@@ -3,8 +3,6 @@ class ProcessBot::Process::Handlers::Sidekiq
 
   def initialize(options)
     @options = options
-
-    set_defaults
   end
 
   def fetch(*args, **opts)
@@ -19,15 +17,6 @@ class ProcessBot::Process::Handlers::Sidekiq
 
   def set(*args, **opts)
     options.set(*args, **opts)
-  end
-
-  def set_defaults
-    set :sidekiq_default_hooks, true
-    set :sidekiq_pid, -> { File.join(shared_path, "tmp", "pids", "sidekiq.pid") }
-    set :sidekiq_timeout, 10
-    set :sidekiq_roles, fetch(:sidekiq_role, :app)
-    set :sidekiq_processes, 1
-    set :sidekiq_options_per_process, nil
   end
 
   def command # rubocop:disable Metrics/AbcSize
@@ -47,9 +36,10 @@ class ProcessBot::Process::Handlers::Sidekiq
       end
     end
 
-    command = ""
+    command = "bash -c 'cd #{options.fetch(:release_path)} && "
     command << "#{options.fetch(:bundle_prefix)} " if options.present?(:bundle_prefix)
     command << "bundle exec sidekiq #{args.compact.join(' ')}"
+    command << "'"
     command
   end
 end
