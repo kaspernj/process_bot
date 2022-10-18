@@ -1,4 +1,6 @@
 class ProcessBot::Capistrano::Puma < Capistrano::Plugin
+  autoload :Common, "#{__dir__}/puma/common"
+
   include ::ProcessBot::Capistrano::Puma::Common
 
   def define_tasks

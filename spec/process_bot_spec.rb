@@ -1,6 +1,6 @@
-# frozen_string_literal: true
+require "spec_helper"
 
-RSpec.describe ProcessBot do
+describe ProcessBot do
   it "has a version number" do
     expect(ProcessBot::VERSION).not_to be_nil
   end

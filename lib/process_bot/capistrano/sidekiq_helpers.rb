@@ -87,22 +87,6 @@ module ProcessBot::Capistrano::SidekiqHelpers
   end
 
   def start_sidekiq(idx = 0) # rubocop:disable Metrics/AbcSize
-    args = []
-    args.push "--sidekiq-env #{fetch(:sidekiq_env)}"
-    args.push "--sidekiq-require #{fetch(:sidekiq_require)}" if fetch(:sidekiq_require)
-    args.push "--sidekiq-tag #{fetch(:sidekiq_tag)}" if fetch(:sidekiq_tag)
-    args.push "--sidekiq-queues #{Array(fetch(:sidekiq_queue)).join(",")}"
-    args.push "--sidekiq-config #{fetch(:sidekiq_config)}" if fetch(:sidekiq_config)
-    args.push "--sidekiq-concurrency #{fetch(:sidekiq_concurrency)}" if fetch(:sidekiq_concurrency)
-    if (process_options = fetch(:sidekiq_options_per_process))
-      args.push process_options[idx]
-    end
-    # use sidekiq_options for special options
-    args.push fetch(:sidekiq_options) if fetch(:sidekiq_options)
-    args.push "--sidekiq-prefix #{SSHKit.config.command_map.prefix[:sidekiq].join(" ")}"
-    args.push "--log-file-path #{fetch(:sidekiq_log)}" if fetch(:sidekiq_log)
-    args.push "--port #{7050 + idx}"
-
     releases = backend.capture(:ls, "-x", releases_path).split
     releases << release_timestamp.to_s if release_timestamp
     releases.uniq
@@ -110,13 +94,34 @@ module ProcessBot::Capistrano::SidekiqHelpers
     latest_release_version = releases.last
     raise "Invalid release timestamp: #{release_timestamp}" unless latest_release_version
 
+    args = [
+      "--id", "sidekiq-#{latest_release_version}-#{idx}",
+      "--handler", "sidekiq",
+      "--bundle-prefix", SSHKit.config.command_map.prefix[:bundle].join(" "),
+      "--sidekiq-environment", fetch(:sidekiq_env),
+      "--port", 7050 + idx
+    ]
+    args += ["--log-file-path", fetch(:sidekiq_log)] if fetch(:sidekiq_log)
+    args += ["--sidekiq-require", fetch(:sidekiq_require)] if fetch(:sidekiq_require)
+    args += ["--sidekiq-tag", fetch(:sidekiq_tag)] if fetch(:sidekiq_tag)
+    args += ["--sidekiq-queues", Array(fetch(:sidekiq_queue)).join(",")] if fetch(:sidekiq_queue)
+    args += ["--sidekiq-config", fetch(:sidekiq_config)] if fetch(:sidekiq_config)
+    args += ["--sidekiq-concurrency", fetch(:sidekiq_concurrency)] if fetch(:sidekiq_concurrency)
+    if (process_options = fetch(:sidekiq_options_per_process))
+      args += process_options[idx]
+    end
+    args += fetch(:sidekiq_options) if fetch(:sidekiq_options)
+
     screen_args = ["-dmS sidekiq-#{idx}-#{latest_release_version}"]
     screen_args << "-L -Logfile #{fetch(:sidekiq_log)}" if fetch(:sidekiq_log)
 
+    process_bot_args = args.compact.map { |arg| "\"#{arg}\"" }
+
     command = "/usr/bin/screen #{screen_args.join(" ")} " \
-      "bash -c 'cd #{release_path} && bundle exec process_bot --id sidekiq-#{latest_release_version}-#{idx} --handler sidekiq #{args.compact.join(' ')}'"
+      "bash -c 'cd #{release_path} && #{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot #{process_bot_args.join(" ")}'"
 
     puts "WARNING: A known bug prevents Sidekiq from starting when pty is set (which it is)" if fetch(:pty)
+    puts "ProcessBot Sidekiq command: #{command}"
 
     backend.execute command
   end

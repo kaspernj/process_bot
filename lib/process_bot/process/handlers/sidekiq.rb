@@ -32,24 +32,24 @@ class ProcessBot::Process::Handlers::Sidekiq
 
   def command # rubocop:disable Metrics/AbcSize
     args = []
-    args.push "--environment #{fetch(:sidekiq_env)}"
-    args.push "--require #{fetch(:sidekiq_require)}" if options.present?(:sidekiq_require)
-    args.push "--tag #{fetch(:sidekiq_tag)}" if options.present?(:sidekiq_tag)
 
-    if options.present?(:sidekiq_queue)
-      Array(fetch(:sidekiq_queue)).each do |queue|
-        args.push "--queue #{queue}"
+    options.options.each do |key, value|
+      if (match = key.to_s.match(/\Asidekiq-(.+)\Z/))
+        sidekiq_key = match[1]
+
+        if sidekiq_key == "queue"
+          value.split(",").each do |queue|
+            args.push "--queue #{value}"
+          end
+        else
+          args.push "--#{sidekiq_key} #{value}"
+        end
       end
     end
 
-    args.push "--config #{fetch(:sidekiq_config)}" if options.present?(:sidekiq_config)
-    args.push "--concurrency #{fetch(:sidekiq_concurrency)}" if options.present?(:sidekiq_concurrency)
-    if (process_options = fetch(:sidekiq_options_per_process))
-      args.push process_options[idx]
-    end
-    # use sidekiq_options for special options
-    args.push fetch(:sidekiq_options) if options.present?(:sidekiq_options)
-
-    "bundle exec sidekiq #{args.compact.join(' ')}"
+    command = ""
+    command << "#{options.fetch(:bundle_prefix)} " if options.present?(:bundle_prefix)
+    command << "bundle exec sidekiq #{args.compact.join(' ')}"
+    command
   end
 end

@@ -19,11 +19,6 @@ namespace :load do
     set :chruby_map_bins, fetch(:chruby_map_bins).to_a.concat(%w[sidekiq sidekiqctl])
     # Bundler integration
     set :bundle_bins, fetch(:bundle_bins).to_a.concat(%w[sidekiq sidekiqctl])
-    # Init system integration
-    set :init_system, -> {}
-    # systemd integration
-    set :service_unit_name, "sidekiq-#{fetch(:stage)}.service"
-    set :upstart_service_name, "sidekiq"
   end
 end
 

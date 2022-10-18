@@ -1,7 +1,5 @@
 class ProcessBot::Process
-  module Handlers
-  end
-
+  autoload :Handlers, "#{__dir__}/process/handlers"
   autoload :Runner, "#{__dir__}/process/runner"
 
   attr_reader :options, :stopped

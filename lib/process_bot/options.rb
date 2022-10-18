@@ -1,8 +1,8 @@
 class ProcessBot::Options
   attr_reader :options
 
-  def initialize
-    @options = {}
+  def initialize(options = {})
+    @options = options
   end
 
   def fetch(*args, **opts, &blk)
