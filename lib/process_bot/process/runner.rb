@@ -1,32 +1,33 @@
 class ProcessBot::Process::Runner
-  attr_reader :command, :exit_status, :stop_time
+  attr_reader :command, :exit_status, :logger, :monitor, :options, :output, :stop_time
 
-  def initialize(command:)
+  def initialize(command:, logger:, options:)
     @command = command
+    @logger = logger
+    @monitor = Monitor.new
+    @options = options
     @output = []
   end
 
-  def on_output(&blk)
-    puts "Setting on output for: #{command}"
-    @on_output_callback = blk
+  def output(output:, type:)
+    logger.log(output)
   end
 
   def run
     @start_time = Time.new
     stderr_reader, stderr_writer = IO.pipe
 
+    require "pty"
+
     PTY.spawn(command, err: stderr_writer.fileno) do |stdout, stdin, pid|
       @pid = pid
-
-      puts "Command running: #{command} - #{stdout.class.name}"
+      logger.log "Command running with PID #{pid}: #{command}"
 
       stdout_reader_thread = Thread.new do
         begin
           stdout.each_char do |chunk|
             monitor.synchronize do
-              out = {type: :stdout, output: chunk}
-              output << out
-              on_output_callback&.call(out)
+              output(type: :stdout, output: chunk)
             end
           end
         rescue Errno::EIO => e
@@ -42,9 +43,7 @@ class ProcessBot::Process::Runner
       stderr_reader_thread = Thread.new do
         stderr_reader.each_char do |chunk|
           monitor.synchronize do
-            out = {type: :stderr, output: chunk}
-            output << out
-            on_output_callback&.call(out)
+            output(type: :stderr, output: chunk)
           end
         end
       end

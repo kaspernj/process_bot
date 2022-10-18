@@ -10,26 +10,27 @@ require "optparse"
 require "string-cases"
 require_relative "../lib/process_bot"
 
-options = {}
+options = ProcessBot::Options.new
+argv_i = 0
 
-OptionParser
-  .new do |opts|
-    opts.banner = "Usage: process_bot [options]"
+while argv_i < ARGV.length
+  arg = ARGV.fetch(argv_i)
 
-    opts.on("-iID", "--id=ID", "The ID of the instance") do |value|
-      options[:id] = value
-    end
+  if (match = arg.match(/\A--(.+)\Z/))
+    key = match[1].gsub("-", "_").to_sym
+    argv_i += 1
+    value = ARGV.fetch(argv_i)
 
-    opts.on("-hHANDLER", "--handler=HANDLER", "Set handler") do |value|
-      options[:handler] = value
-    end
-
-    opts.on("-v", "--verbose", "Run verbosely") do |value|
-      options[:verbose] = value
-    end
+    options.set(key, value)
+  else
+    raise "Unknown option: #{arg}"
   end
-  .parse!
+
+  argv_i += 1
+end
+
+pp options.options
 
 ProcessBot::Process
-  .new(**options)
+  .new(options)
   .execute!

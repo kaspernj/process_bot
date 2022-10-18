@@ -9,3 +9,5 @@ gem "rake"
 gem "rspec"
 gem "rubocop"
 gem "string-cases"
+
+gem "pry"
