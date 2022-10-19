@@ -24,52 +24,41 @@ end
 
 namespace :process_bot do
   namespace :sidekiq do
-    desc "Quiet sidekiq (stop fetching new tasks from Redis)"
-    task :quiet do
+    desc "Stop Sidekiq and ProcessBot gracefully (stop fetching new tasks from Redis and then quit when nothing is running)"
+    task :graceful do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
-          git_plugin.running_sidekiq_processes.each do |sidekiq_process|
-            git_plugin.stop_sidekiq(pid: sidekiq_process.fetch(:pid), signal: "TSTP")
+          git_plugin.running_process_bot_processes.each do |process_bot_process|
+            git_plugin.process_bot_command(process_bot_process, :graceful)
           end
         end
       end
     end
 
-    desc "Stop Sidekiq (graceful shutdown within timeout, put unfinished tasks back to Redis)"
+    desc "Stop Sidekiq and ProcessBot (graceful shutdown within timeout, put unfinished tasks back to Redis)"
     task :stop do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
-          git_plugin.running_sidekiq_processes.each do |sidekiq_process|
-            git_plugin.stop_sidekiq(pid: sidekiq_process.fetch(:pid), signal: "TERM")
+          git_plugin.running_process_bot_processes.each do |process_bot_data|
+            git_plugin.process_bot_command(process_bot_data, :stop)
           end
         end
       end
     end
 
-    desc "Stops Sidekiq after a set amount of time"
-    task :stop_after_time do
-      on roles fetch(:sidekiq_roles) do |role|
-        git_plugin.switch_user(role) do
-          git_plugin.running_sidekiq_processes.each do |sidekiq_process|
-            git_plugin.stop_sidekiq_after_time(pid: sidekiq_process.fetch(:pid), signal: "TERM")
-          end
-        end
-      end
-    end
-
-    desc "Start sidekiq"
+    desc "Start Sidekiq and ProcessBot"
     task :start do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
           fetch(:sidekiq_processes).times do |idx|
-            puts "Starting Sidekiq #{idx}"
+            puts "Starting Sidekiq with ProcessBot #{idx}"
             git_plugin.start_sidekiq(idx)
           end
         end
       end
     end
 
-    desc "Restart sidekiq"
+    desc "Restart Sidekiq and ProcessBot"
     task :restart do
       invoke! "process_bot:sidekiq:stop"
       invoke! "process_bot:sidekiq:start"

@@ -1,3 +1,5 @@
+require "socket"
+
 class ProcessBot::ControlSocket
   attr_reader :options, :process, :server
 
@@ -11,10 +13,16 @@ class ProcessBot::ControlSocket
   end
 
   def start
-    require "socket"
+    @server = TCPServer.new("localhost", port)
+    run_client_loop
 
-    @server = TCPServer.new(port)
+    puts "TCPServer started"
+
     options.events.call(:on_socket_opened, port: port)
+  end
+
+  def stop
+    server.close
   end
 
   def run_client_loop
@@ -28,13 +36,19 @@ class ProcessBot::ControlSocket
   end
 
   def handle_client(client)
-    command = JSON.parse(client.gets)
-    type = command.fetch("type")
+    loop do
+      data = client.gets
+      break if data.nil? # Client disconnected
 
-    if type == "stop"
-      process.stop
-    else
-      client.puts(JSON.generate(type: "error", message: "Unknown type: #{type}"))
+      command = JSON.parse(data)
+      command_type = command.fetch("command")
+
+      if command_type == "graceful" || command_type == "stop"
+        process.__send__(command_type)
+        client.puts(JSON.generate(type: "success"))
+      else
+        client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}"))
+      end
     end
   end
 end

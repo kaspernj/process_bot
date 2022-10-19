@@ -19,7 +19,7 @@ class ProcessBot::Process::Handlers::Sidekiq
     options.set(*args, **opts)
   end
 
-  def command # rubocop:disable Metrics/AbcSize
+  def start_command # rubocop:disable Metrics/AbcSize
     args = []
 
     options.options.each do |key, value|

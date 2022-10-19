@@ -29,8 +29,6 @@ while argv_i < ARGV.length
   argv_i += 1
 end
 
-pp options.options
-
 ProcessBot::Process
   .new(options)
   .execute!

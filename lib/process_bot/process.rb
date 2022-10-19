@@ -14,6 +14,10 @@ class ProcessBot::Process
     options.events.connect(:on_socket_opened, &method(:on_socket_opened)) # rubocop:disable Performance/MethodObjectAsBlock
   end
 
+  def graceful
+    @stopped = true
+  end
+
   def logger
     @logger ||= ProcessBot::Logger.new(options: options)
   end
@@ -44,7 +48,7 @@ class ProcessBot::Process
     end
   end
 
-  def execute!
+  def start
     start_control_socket
 
     loop do
@@ -60,13 +64,22 @@ class ProcessBot::Process
   end
 
   def run
+    command = options.fetch(:command)
     handler_instance = handler_class.new(options)
-    runner = ProcessBot::Process::Runner.new(command: handler_instance.command, logger: logger, options: options)
-    runner.run
+
+    if command == "start"
+      runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
+      runner.run
+    elsif command == "graceful" || command == "stop"
+      client.send_command(command: command)
+    else
+      raise "Unknown command: #{command}"
+    end
   end
 
   def update_process_title
-    @current_process_title = "ProcessBot #{options.fetch(:handler)} PID #{current_pid} port #{port}"
+    process_args = {application: options[:application], handler: options.fetch(:handler), id: options[:id], pid: current_pid, port: port}
+    @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
   end
 end

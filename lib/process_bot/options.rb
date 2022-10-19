@@ -5,6 +5,10 @@ class ProcessBot::Options
     @options = options
   end
 
+  def [](key)
+    options[key]
+  end
+
   def events
     @events ||= begin
       require "knjrbfw"
