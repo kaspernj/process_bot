@@ -53,10 +53,10 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     raise "No :sidekiq_app_name was set" unless sidekiq_app_name
 
     begin
-      processes_output = backend.capture("ps a | egrep 'sidekiq ([0-9]+\.[0-9]+\.[0-9]+) #{Regexp.escape(sidekiq_app_name)}'")
+      processes_output = backend.capture("ps a | grep ProcessBot | grep sidekiq | grep -v '/usr/bin/SCREEN' | grep '#{Regexp.escape(sidekiq_app_name)}'")
     rescue SSHKit::Command::Failed
       # Fails when output is empty (when no processes found through grep)
-      puts "No Sidekiq processes found"
+      puts "No ProcessBot Sidekiq processes found"
       return []
     end
 
@@ -95,7 +95,9 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     raise "Invalid release timestamp: #{release_timestamp}" unless latest_release_version
 
     args = [
+      "--command", "start",
       "--id", "sidekiq-#{latest_release_version}-#{idx}",
+      "--application", fetch(:sidekiq_app_name, fetch(:application)),
       "--handler", "sidekiq",
       "--bundle-prefix", SSHKit.config.command_map.prefix[:bundle].join(" "),
       "--sidekiq-environment", fetch(:sidekiq_env),
