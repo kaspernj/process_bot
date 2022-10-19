@@ -14,6 +14,20 @@ class ProcessBot::Process
     options.events.connect(:on_socket_opened, &method(:on_socket_opened)) # rubocop:disable Performance/MethodObjectAsBlock
   end
 
+  def execute!
+    command = options.fetch(:command)
+    handler_instance = handler_class.new(options)
+
+    if command == "start"
+      runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
+      runner.run
+    elsif command == "graceful" || command == "stop"
+      client.send_command(command: command)
+    else
+      raise "Unknown command: #{command}"
+    end
+  end
+
   def graceful
     @stopped = true
   end
@@ -60,20 +74,6 @@ class ProcessBot::Process
         puts "Process stopped - starting again after 1 sec"
         sleep 1
       end
-    end
-  end
-
-  def run
-    command = options.fetch(:command)
-    handler_instance = handler_class.new(options)
-
-    if command == "start"
-      runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
-      runner.run
-    elsif command == "graceful" || command == "stop"
-      client.send_command(command: command)
-    else
-      raise "Unknown command: #{command}"
     end
   end
 
