@@ -14,6 +14,7 @@ class ProcessBot::ControlSocket
     require "socket"
 
     @server = TCPServer.new(port)
+    options.events.call(:on_socket_opened, port: port)
   end
 
   def run_client_loop
