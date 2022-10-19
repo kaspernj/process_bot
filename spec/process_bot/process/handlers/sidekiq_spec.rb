@@ -9,7 +9,7 @@ describe ProcessBot::Process::Handlers::Sidekiq do
       )
       sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(options)
 
-      expect(sidekiq.start_command).to eq "bash -c 'cd /home/build/project/current && ~/.rvm/bin/rvm 3.1.2 do bundle exec sidekiq '"
+      expect(sidekiq.start_command).to eq "bash -c 'cd /home/build/project/current && exec ~/.rvm/bin/rvm 3.1.2 do bundle exec sidekiq '"
     end
 
     it "passes on Sidekiq options" do
@@ -20,7 +20,7 @@ describe ProcessBot::Process::Handlers::Sidekiq do
       )
       sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(options)
 
-      expect(sidekiq.start_command).to eq "bash -c 'cd /home/build/project/current && bundle exec sidekiq " \
+      expect(sidekiq.start_command).to eq "bash -c 'cd /home/build/project/current && exec bundle exec sidekiq " \
         "--environment production " \
         "--queue queue1 " \
         "--queue queue2 " \

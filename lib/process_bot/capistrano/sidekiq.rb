@@ -1,5 +1,3 @@
-require_relative "sidekiq_helpers"
-
 class ProcessBot::Capistrano::Sidekiq < Capistrano::Plugin
   include ProcessBot::Capistrano::SidekiqHelpers
 

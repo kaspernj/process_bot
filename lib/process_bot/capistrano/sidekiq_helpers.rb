@@ -1,4 +1,6 @@
-module ProcessBot::Capistrano::SidekiqHelpers
+require "json"
+
+module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLength
   def sidekiq_require
     "--require #{fetch(:sidekiq_require)}" if fetch(:sidekiq_require)
   end
@@ -49,9 +51,13 @@ module ProcessBot::Capistrano::SidekiqHelpers
       return []
     end
 
+    parse_process_bot_process_from_ps(processes_output)
+  end
+
+  def parse_process_bot_process_from_ps(processes_output)
     processes = []
-    processes_output.scan(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+ProcessBot (\{.+\})$/).each do |process_output|
-      process_bot_data = JSON.parse(process_output[1])
+    processes_output.scan(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+ProcessBot (\{([^\n]+?)\})$/).each do |process_output|
+      process_bot_data = JSON.parse(process_output[4])
       process_bot_pid = process_output[0]
       process_bot_data["process_bot_pid"] = process_bot_pid
 
