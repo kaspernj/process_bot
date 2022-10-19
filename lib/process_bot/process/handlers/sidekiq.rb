@@ -23,16 +23,16 @@ class ProcessBot::Process::Handlers::Sidekiq
     args = []
 
     options.options.each do |key, value|
-      if (match = key.to_s.match(/\Asidekiq-(.+)\Z/))
-        sidekiq_key = match[1]
+      next unless (match = key.to_s.match(/\Asidekiq_(.+)\Z/))
 
-        if sidekiq_key == "queue"
-          value.split(",").each do |queue|
-            args.push "--queue #{value}"
-          end
-        else
-          args.push "--#{sidekiq_key} #{value}"
+      sidekiq_key = match[1]
+
+      if sidekiq_key == "queue"
+        value.split(",").each do |queue|
+          args.push "--queue #{queue}"
         end
+      else
+        args.push "--#{sidekiq_key} #{value}"
       end
     end
 

@@ -1,5 +1,5 @@
 class ProcessBot::Logger
-  attr_reader :fp_log, :options
+  attr_reader :options
 
   def initialize(options:)
     @options = options

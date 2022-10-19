@@ -1,4 +1,4 @@
-module ProcessBot::Capistrano::SidekiqHelpers
+module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLength
   def sidekiq_require
     "--require #{fetch(:sidekiq_require)}" if fetch(:sidekiq_require)
   end
@@ -86,7 +86,7 @@ module ProcessBot::Capistrano::SidekiqHelpers
     backend.capture(:echo, SSHKit.config.command_map[:bundle]).strip
   end
 
-  def start_sidekiq(idx = 0) # rubocop:disable Metrics/AbcSize
+  def start_sidekiq(idx = 0) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     releases = backend.capture(:ls, "-x", releases_path).split
     releases << release_timestamp.to_s if release_timestamp
     releases.uniq
