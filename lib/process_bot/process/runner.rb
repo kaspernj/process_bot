@@ -22,7 +22,7 @@ class ProcessBot::Process::Runner
     PTY.spawn(command, err: stderr_writer.fileno) do |stdout, _stdin, pid|
       @pid = pid
       logger.log "Command running with PID #{pid}: #{command}"
-      options.call(:on_process_started, pid: pid)
+      options.events.call(:on_process_started, pid: pid)
 
       stdout_reader_thread = Thread.new do
         stdout.each_char do |chunk|
