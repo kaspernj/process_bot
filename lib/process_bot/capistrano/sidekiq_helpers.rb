@@ -1,4 +1,4 @@
-module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLength
+module ProcessBot::Capistrano::SidekiqHelpers
   def sidekiq_require
     "--require #{fetch(:sidekiq_require)}" if fetch(:sidekiq_require)
   end
@@ -30,25 +30,14 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     end
   end
 
-  VALID_SIGNALS = ["TERM", "TSTP"].freeze
-  def stop_sidekiq(pid:, signal:)
-    raise "Invalid PID: #{pid}" unless pid.to_s.match?(/\A\d+\Z/)
-    raise "Invalid signal: #{signal}" unless VALID_SIGNALS.include?(signal)
-
-    backend.execute "kill -#{signal} #{pid}"
+  def process_bot_command(process_bot_data, command)
+    backend.execute "cd #{release_path} && " \
+      "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
+      "--command #{command} " \
+      "--port #{process_bot_data.fetch("post")}"
   end
 
-  def stop_sidekiq_after_time(pid:, signal:)
-    raise "Invalid PID: #{pid}" unless pid.to_s.match?(/\A\d+\Z/)
-    raise "Invalid signal: #{signal}" unless VALID_SIGNALS.include?(signal)
-
-    time = ENV["STOP_AFTER_TIME"] || fetch(:sidekiq_stop_after_time)
-    raise "Invalid time: #{time}" unless time.to_s.match?(/\A\d+\Z/)
-
-    backend.execute "screen -dmS stopsidekiq#{pid} bash -c \"sleep #{time} && kill -#{signal} #{pid}\""
-  end
-
-  def running_sidekiq_processes
+  def running_process_bot_processes
     sidekiq_app_name = fetch(:sidekiq_app_name, fetch(:application))
     raise "No :sidekiq_app_name was set" unless sidekiq_app_name
 
@@ -61,10 +50,12 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     end
 
     processes = []
-    processes_output.scan(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/).each do |process_output|
-      sidekiq_pid = process_output[0]
+    processes_output.scan(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+ProcessBot (\{.+\})$/).each do |process_output|
+      process_bot_data = JSON.parse(process_output[1])
+      process_bot_pid = process_output[0]
+      process_bot_data["process_bot_pid"] = process_bot_pid
 
-      processes << {pid: sidekiq_pid}
+      processes << process_bot_data
     end
 
     processes
