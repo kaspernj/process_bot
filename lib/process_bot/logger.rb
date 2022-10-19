@@ -3,15 +3,13 @@ class ProcessBot::Logger
 
   def initialize(options:)
     @options = options
-
-    open_file if logging?
   end
 
   def log(output)
     return unless logging?
 
-    fp_log&.write(output)
-    fp_log&.flush
+    fp_log.write(output)
+    fp_log.flush
   end
 
   def log_file_path
@@ -19,10 +17,10 @@ class ProcessBot::Logger
   end
 
   def logging?
-    options.present?(:log_file_path
+    options.present?(:log_file_path)
   end
 
-  def open_file
-    @fp_log = File.open(log_file_path, "a")
+  def fp_log
+    @fp_log ||= File.open(log_file_path, "a") if logging?
   end
 end
