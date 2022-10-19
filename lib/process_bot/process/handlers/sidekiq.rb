@@ -38,7 +38,7 @@ class ProcessBot::Process::Handlers::Sidekiq
 
     command = "bash -c 'cd #{options.fetch(:release_path)} && "
     command << "#{options.fetch(:bundle_prefix)} " if options.present?(:bundle_prefix)
-    command << "bundle exec sidekiq #{args.compact.join(' ')}"
+    command << "exec bundle exec sidekiq #{args.compact.join(' ')}"
     command << "'"
     command
   end
