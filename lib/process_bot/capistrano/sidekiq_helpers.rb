@@ -112,7 +112,7 @@ module ProcessBot::Capistrano::SidekiqHelpers
     process_bot_args = args.compact.map { |arg| "\"#{arg}\"" }
 
     command = "/usr/bin/screen #{screen_args.join(" ")} " \
-      "bash -c 'cd #{release_path} && #{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot #{process_bot_args.join(" ")}'"
+      "bash -c 'cd #{release_path} && exec #{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot #{process_bot_args.join(" ")}'"
 
     puts "WARNING: A known bug prevents Sidekiq from starting when pty is set (which it is)" if fetch(:pty)
     puts "ProcessBot Sidekiq command: #{command}"
