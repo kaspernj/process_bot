@@ -1,7 +1,7 @@
 require "knjrbfw"
 
 class ProcessBot::Process::Runner
-  attr_reader :command, :exit_status, :logger, :monitor, :options, :pid, :stop_time
+  attr_reader :command, :exit_status, :logger, :monitor, :options, :pid, :stop_time, :subprocess_pid
 
   def initialize(command:, logger:, options:)
     @command = command
@@ -26,6 +26,7 @@ class ProcessBot::Process::Runner
     require "pty"
 
     PTY.spawn(command, err: stderr_writer.fileno) do |stdout, _stdin, pid|
+      @subprocess_pid = pid
       logger.log "Command running with PID #{pid}: #{command}"
       options.events.call(:on_process_started, pid: pid)
 
@@ -38,7 +39,7 @@ class ProcessBot::Process::Runner
       rescue Errno::EIO
         # Process done
       ensure
-        status = Process::Status.wait(@pid, 0)
+        status = Process::Status.wait(subprocess_pid, 0)
 
         @exit_status = status.exitstatus
         stderr_writer.close
@@ -61,8 +62,8 @@ class ProcessBot::Process::Runner
     end
   end
 
-  def own_pgid
-    @own_pgid ||= Process.getpgid(Process.pid)
+  def subprocess_pgid
+    @subprocess_pgid ||= Process.getpgid(subprocess_pid)
   end
 
   def sidekiq_app_name
@@ -84,14 +85,14 @@ class ProcessBot::Process::Runner
               # Process no longer running
             end
 
-            if own_pgid == sidekiq_pgid
+            if subprocess_pgid == sidekiq_pgid
               puts "FOUND PID: #{sidekiq_pid}"
 
               @pid = sidekiq_pid
 
               break
             else
-              puts "PGID didn't match - Sidekiq: #{sidekiq_pgid} Own: #{own_pgid}"
+              puts "PGID didn't match - Sidekiq: #{sidekiq_pgid} Own: #{subprocess_pgid}"
             end
           end
         end

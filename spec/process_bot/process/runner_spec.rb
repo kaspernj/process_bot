@@ -12,7 +12,7 @@ describe ProcessBot::Process::Runner do
       ]
 
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep sidekiq").and_return(fake_process_output.join("\n"))
-      expect(runner).to receive(:own_pgid).and_return(1234).exactly(3).times
+      expect(runner).to receive(:subprocess_pgid).and_return(1234).exactly(3).times
       expect(Process).to receive(:getpgid).with(341_824).and_return(4444)
       expect(Process).to receive(:getpgid).with(342_132).and_return(1234)
 
