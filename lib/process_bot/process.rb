@@ -30,10 +30,6 @@ class ProcessBot::Process
     @client ||= ProcessBot::ClientSocket.new(options: options)
   end
 
-  def graceful
-    @stopped = true
-  end
-
   def handler_class
     @handler_class ||= begin
       require_relative "process/handlers/#{options.fetch(:handler)}"
@@ -80,6 +76,7 @@ class ProcessBot::Process
 
     @stopped = true
     Process.kill("TSTP", current_pid)
+    wait_for_no_jobs_and_stop_sidekiq
   end
 
   def stop
@@ -99,5 +96,38 @@ class ProcessBot::Process
     process_args = {application: options[:application], handler: options.fetch(:handler), id: options[:id], pid: current_pid, port: port}
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
+  end
+
+  def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
+    loop do
+      found_process = false
+
+      found_process = Knj::Unix_proc.list("grep" => current_pid) do |process|
+        process_command = process.data.fetch("cmd")
+        process_pid = process.data.fetch("pid").to_i
+        next unless process_pid == current_pid
+
+        match = process_command.match(/\Asidekiq (\d+).(\d+).(\d+) #{Regexp.escape(options.fetch(:application))} \[(\d+) of (\d+) busy\]\Z/)
+        raise "Couldnt match Sidekiq command: #{process_command}" unless match
+
+        running_jobs = match[4].to_i
+
+        if running_jobs.positive?
+          sleep 1
+          found_process = true
+        else
+          return # rubocop:disable Lint/NonLocalExitFromIterator
+        end
+      end
+
+      raise "Couldn't find running process with PID #{current_pid}" unless found_process
+    end
+  end
+
+  def wait_for_no_jobs_and_stop_sidekiq
+    puts "Wait for no jobs and Stop sidekiq"
+
+    wait_for_no_jobs
+    stop
   end
 end
