@@ -113,7 +113,12 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     args += fetch(:sidekiq_options) if fetch(:sidekiq_options)
 
     screen_args = ["-dmS sidekiq-#{idx}-#{latest_release_version}"]
-    screen_args << "-L -Logfile #{fetch(:sidekiq_log)}" if fetch(:sidekiq_log)
+
+    if (process_bot_sidekiq_log = fetch(:process_bot_sidekig_log))
+      screen_args << "-L -Logfile #{process_bot_sidekiq_log}"
+    elsif fetch(:sidekiq_log)
+      screen_args << "-L -Logfile #{fetch(:sidekiq_log)}"
+    end
 
     process_bot_args = args.compact.map { |arg| "\"#{arg}\"" }
 
