@@ -1,5 +1,7 @@
+require "knjrbfw"
+
 class ProcessBot::Process::Runner
-  attr_reader :command, :exit_status, :logger, :monitor, :options, :stop_time
+  attr_reader :command, :exit_status, :logger, :monitor, :options, :pid, :stop_time
 
   def initialize(command:, logger:, options:)
     @command = command
@@ -13,6 +15,10 @@ class ProcessBot::Process::Runner
     logger.log(output)
   end
 
+  def running?
+    !stop_time
+  end
+
   def run # rubocop:disable Metrics/AbcSize
     @start_time = Time.new
     stderr_reader, stderr_writer = IO.pipe
@@ -20,7 +26,6 @@ class ProcessBot::Process::Runner
     require "pty"
 
     PTY.spawn(command, err: stderr_writer.fileno) do |stdout, _stdin, pid|
-      @pid = pid
       logger.log "Command running with PID #{pid}: #{command}"
       options.events.call(:on_process_started, pid: pid)
 
@@ -47,10 +52,55 @@ class ProcessBot::Process::Runner
         end
       end
 
+      find_sidekiq_pid
+
       stdout_reader_thread.join
       stderr_reader_thread.join
 
       @stop_time = Time.new
+    end
+  end
+
+  def own_pgid
+    @own_pgid ||= Process.getpgid(Process.pid)
+  end
+
+  def sidekiq_app_name
+    options.fetch(:application)
+  end
+
+  def find_sidekiq_pid # rubocop:disable Metrics/AbcSize
+    Thread.new do
+      while running? && !pid
+        Knj::Unix_proc.list("grep" => "sidekiq") do |process|
+          cmd = process.data.fetch("cmd")
+
+          if /sidekiq ([0-9]+\.[0-9]+\.[0-9]+) #{Regexp.escape(sidekiq_app_name)}/.match?(cmd)
+            sidekiq_pid = process.data.fetch("pid").to_i
+
+            begin
+              sidekiq_pgid = Process.getpgid(sidekiq_pid)
+            rescue Errno::ESRCH
+              # Process no longer running
+            end
+
+            if own_pgid == sidekiq_pgid
+              puts "FOUND PID: #{sidekiq_pid}"
+
+              @pid = sidekiq_pid
+
+              break
+            else
+              puts "PGID didn't match - Sidekiq: #{sidekiq_pgid} Own: #{own_pgid}"
+            end
+          end
+        end
+
+        unless pid
+          puts "Waiting 1 second before trying to find Sidekiq PID again"
+          sleep 1
+        end
+      end
     end
   end
 end
