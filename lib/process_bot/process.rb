@@ -102,25 +102,27 @@ class ProcessBot::Process
     loop do
       found_process = false
 
-      found_process = Knj::Unix_proc.list("grep" => current_pid) do |process|
+      Knj::Unix_proc.list("grep" => current_pid) do |process|
         process_command = process.data.fetch("cmd")
         process_pid = process.data.fetch("pid").to_i
         next unless process_pid == current_pid
 
-        match = process_command.match(/\Asidekiq (\d+).(\d+).(\d+) #{Regexp.escape(options.fetch(:application))} \[(\d+) of (\d+) busy\]\Z/)
+        found_process = true
+        match = process_command.match(/\Asidekiq (\d+).(\d+).(\d+) #{Regexp.escape(options.fetch(:application))} \[(\d+) of (\d+) (.+?)\]\Z/)
         raise "Couldnt match Sidekiq command: #{process_command}" unless match
+
+        pp match
 
         running_jobs = match[4].to_i
 
-        if running_jobs.positive?
-          sleep 1
-          found_process = true
-        else
-          return # rubocop:disable Lint/NonLocalExitFromIterator
-        end
+        puts "running_jobs: #{running_jobs}"
+
+        return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
       end
 
       raise "Couldn't find running process with PID #{current_pid}" unless found_process
+
+      sleep 1
     end
   end
 
