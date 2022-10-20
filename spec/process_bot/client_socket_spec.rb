@@ -2,10 +2,14 @@ require "spec_helper"
 
 describe ProcessBot::ClientSocket do
   it "sends a stop command to the server" do
-    fake_process = instance_double(ProcessBot::Process)
-    expect(fake_process).to receive(:stop)
+    options = ProcessBot::Options.new
+    process = ProcessBot::Process.new(options)
+    process.instance_variable_set(:@current_pid, 1234)
 
-    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: fake_process)
+    expect(process).to receive(:stop).and_call_original
+    expect(Process).to receive(:kill).with("TERM", 1234)
+
+    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
     control_socket.start
 
     begin
@@ -22,10 +26,14 @@ describe ProcessBot::ClientSocket do
   end
 
   it "sends a graceful stop command to the server" do
-    fake_process = instance_double(ProcessBot::Process)
-    expect(fake_process).to receive(:graceful)
+    options = ProcessBot::Options.new
+    process = ProcessBot::Process.new(options)
+    process.instance_variable_set(:@current_pid, 1234)
 
-    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: fake_process)
+    expect(process).to receive(:graceful).and_call_original
+    expect(Process).to receive(:kill).with("TSTP", 1234)
+
+    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
     control_socket.start
 
     begin

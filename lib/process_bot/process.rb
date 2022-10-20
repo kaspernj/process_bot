@@ -76,14 +76,14 @@ class ProcessBot::Process
   end
 
   def graceful
-    raise "Sidekiq not running with a PID" unless pid
+    raise "Sidekiq not running with a PID" unless current_pid
 
     @stopped = true
     Process.kill("TSTP", current_pid)
   end
 
   def stop
-    raise "Sidekiq not running with a PID" unless pid
+    raise "Sidekiq not running with a PID" unless current_pid
 
     @stopped = true
     Process.kill("TERM", current_pid)

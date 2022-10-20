@@ -44,8 +44,14 @@ class ProcessBot::ControlSocket
       command_type = command.fetch("command")
 
       if command_type == "graceful" || command_type == "stop"
-        process.__send__(command_type)
-        client.puts(JSON.generate(type: "success"))
+        begin
+          process.__send__(command_type)
+          client.puts(JSON.generate(type: "success"))
+        rescue => e
+          client.puts(JSON.generate(type: "error", message: e.message))
+
+          raise e
+        end
       else
         client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}"))
       end
