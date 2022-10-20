@@ -16,11 +16,9 @@ class ProcessBot::Process
 
   def execute!
     command = options.fetch(:command)
-    handler_instance = handler_class.new(options)
 
     if command == "start"
-      runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
-      runner.run
+      start
     elsif command == "graceful" || command == "stop"
       client.send_command(command: command)
     else
@@ -75,6 +73,12 @@ class ProcessBot::Process
         sleep 1
       end
     end
+  end
+
+  def run
+    handler_instance = handler_class.new(options)
+    runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
+    runner.run
   end
 
   def update_process_title

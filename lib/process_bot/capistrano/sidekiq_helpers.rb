@@ -101,7 +101,10 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
       "--port", 7050 + idx,
       "--release-path", release_path
     ]
-    args += ["--log-file-path", fetch(:sidekiq_log)] if fetch(:sidekiq_log)
+
+    # Use screen for logging everything which is why this is disabled
+    # args += ["--log-file-path", fetch(:sidekiq_log)] if fetch(:sidekiq_log)
+
     args += ["--sidekiq-require", fetch(:sidekiq_require)] if fetch(:sidekiq_require)
     args += ["--sidekiq-tag", fetch(:sidekiq_tag)] if fetch(:sidekiq_tag)
     args += ["--sidekiq-queues", Array(fetch(:sidekiq_queue)).join(",")] if fetch(:sidekiq_queue)
