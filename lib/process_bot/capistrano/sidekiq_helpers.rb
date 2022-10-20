@@ -36,7 +36,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     backend.execute "cd #{release_path} && " \
       "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
       "--command #{command} " \
-      "--port #{process_bot_data.fetch("post")}"
+      "--port #{process_bot_data.fetch("port")}"
   end
 
   def running_process_bot_processes
