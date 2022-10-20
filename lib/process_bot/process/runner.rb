@@ -28,7 +28,6 @@ class ProcessBot::Process::Runner
     PTY.spawn(command, err: stderr_writer.fileno) do |stdout, _stdin, pid|
       @subprocess_pid = pid
       logger.log "Command running with PID #{pid}: #{command}"
-      options.events.call(:on_process_started, pid: pid)
 
       stdout_reader_thread = Thread.new do
         stdout.each_char do |chunk|
@@ -89,6 +88,7 @@ class ProcessBot::Process::Runner
               puts "FOUND PID: #{sidekiq_pid}"
 
               @pid = sidekiq_pid
+              options.events.call(:on_process_started, pid: pid)
 
               break
             else
