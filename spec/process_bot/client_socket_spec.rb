@@ -32,6 +32,9 @@ describe ProcessBot::ClientSocket do
 
     expect(process).to receive(:graceful).and_call_original
     expect(Process).to receive(:kill).with("TSTP", 1234)
+    expect(process).to receive(:wait_for_no_jobs_and_stop_sidekiq).and_call_original
+    expect(process).to receive(:wait_for_no_jobs)
+    expect(process).to receive(:stop)
 
     control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
     control_socket.start

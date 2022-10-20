@@ -47,4 +47,21 @@ describe ProcessBot::Process do
       expect(process.current_process_title).to eq "ProcessBot {\"application\":\"test_app\",\"handler\":\"sidekiq\",\"id\":null,\"pid\":123,\"port\":7052}"
     end
   end
+
+  describe "#wait_for_no_jobs_and_stop_sidekiq" do
+    it "waits for Sidekiq to have no running jobs and then terminates it" do
+      fake_process_output = [
+        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25 busy]",
+        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25 busy]"
+      ]
+
+      expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").and_return(fake_process_output.join("\n"))
+      expect(Process).to receive(:kill).with("TERM", 342_132)
+
+      options = ProcessBot::Options.new(application: "gratisbyggetilbud_rails")
+      process = ProcessBot::Process.new(options)
+      process.instance_variable_set(:@current_pid, 342_132)
+      process.wait_for_no_jobs_and_stop_sidekiq
+    end
+  end
 end

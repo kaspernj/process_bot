@@ -35,7 +35,7 @@ class ProcessBot::ControlSocket
     end
   end
 
-  def handle_client(client)
+  def handle_client(client) # rubocop:disable Metrics/AbcSize
     loop do
       data = client.gets
       break if data.nil? # Client disconnected
@@ -47,7 +47,7 @@ class ProcessBot::ControlSocket
         begin
           process.__send__(command_type)
           client.puts(JSON.generate(type: "success"))
-        rescue => e
+        rescue => e # rubocop:disable Style/RescueStandardError
           client.puts(JSON.generate(type: "error", message: e.message))
 
           raise e
