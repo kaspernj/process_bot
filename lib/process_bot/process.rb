@@ -26,6 +26,10 @@ class ProcessBot::Process
     end
   end
 
+  def client
+    @client ||= ProcessBot::ClientSocket.new(options: options)
+  end
+
   def graceful
     @stopped = true
   end

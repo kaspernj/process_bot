@@ -16,10 +16,7 @@ class ProcessBot::ClientSocket
   end
 
   def send_command(data)
-    puts "Sending command"
     client.puts(JSON.generate(data))
-
-    puts "Getting response"
     response = JSON.parse(client.gets)
 
     if response.fetch("type") == "success"
