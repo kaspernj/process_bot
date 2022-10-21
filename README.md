@@ -1,8 +1,8 @@
 # ProcessBot
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/process_bot`. To experiment with that code, run `bin/console` for an interactive prompt.
+Run your app through ProcessBot for automatic restart if crashing, but still support normal deployment through Capistrano.
 
-TODO: Delete this and the text above, and describe your gem
+In the future ProcessBot will also watch memory usage and restart processes if leaking memory automatically and gracefully.
 
 ## Installation
 
@@ -12,17 +12,27 @@ Add this line to your application's Gemfile:
 gem 'process_bot'
 ```
 
-And then execute:
+Add to your `Capfile`:
+```ruby
+require "process_bot"
+install_plugin ProcessBot::Capistrano::Sidekiq
+install_plugin ProcessBot::Capistrano::Puma
+```
 
-    $ bundle install
-
-Or install it yourself as:
-
-    $ gem install process_bot
+Add to your `deploy.rb`:
+```ruby
+after "deploy:starting", "process_bot:sidekiq:graceful"
+after "deploy:published", "process_bot:sidekiq:start"
+after "deploy:failed", "process_bot:sidekiq:start"
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+Run commands in the command line like this:
+
+```bash
+cap production process_bot:sidekiq:graceful
+```
 
 ## Development
 
