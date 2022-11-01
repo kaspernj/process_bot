@@ -11,7 +11,7 @@ class ProcessBot::Process::Runner
     @output = []
   end
 
-  def output(output:, type:) # rubocop:disable Lint/UnusedMethodArgument
+  def output(output:, type:)
     logger.log(output, type: type)
   end
 
