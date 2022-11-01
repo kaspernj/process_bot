@@ -72,17 +72,19 @@ class ProcessBot::Process
   end
 
   def graceful
+    @stopped = true
+
     raise "Sidekiq not running with a PID" unless current_pid
 
-    @stopped = true
     Process.kill("TSTP", current_pid)
     wait_for_no_jobs_and_stop_sidekiq
   end
 
   def stop
+    @stopped = true
+
     raise "Sidekiq not running with a PID" unless current_pid
 
-    @stopped = true
     Process.kill("TERM", current_pid)
   end
 
@@ -110,8 +112,6 @@ class ProcessBot::Process
         found_process = true
         match = process_command.match(/\Asidekiq (\d+).(\d+).(\d+) #{Regexp.escape(options.fetch(:application))} \[(\d+) of (\d+) (.+?)\]\Z/)
         raise "Couldnt match Sidekiq command: #{process_command}" unless match
-
-        pp match
 
         running_jobs = match[4].to_i
 

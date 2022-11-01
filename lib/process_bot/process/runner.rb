@@ -11,8 +11,8 @@ class ProcessBot::Process::Runner
     @output = []
   end
 
-  def output(output:, type:) # rubocop:disable Lint/UnusedMethodArgument
-    logger.log(output)
+  def output(output:, type:)
+    logger.log(output, type: type)
   end
 
   def running?
@@ -27,7 +27,7 @@ class ProcessBot::Process::Runner
 
     PTY.spawn(command, err: stderr_writer.fileno) do |stdout, _stdin, pid|
       @subprocess_pid = pid
-      logger.log "Command running with PID #{pid}: #{command}"
+      logger.log "Command running with PID #{pid}: #{command}\n"
 
       stdout_reader_thread = Thread.new do
         stdout.each_char do |chunk|
