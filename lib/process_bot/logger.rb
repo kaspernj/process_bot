@@ -5,8 +5,16 @@ class ProcessBot::Logger
     @options = options
   end
 
-  def log(output)
-    return unless logging?
+  def log(output, type: :stdout)
+    if type == :stdout
+      $stdout.print output
+    elsif type == :stderr
+      $stderr.print output
+    else
+      raise "Unknown type: #{type}"
+    end
+
+    return unless log_to_file?
 
     fp_log.write(output)
     fp_log.flush
@@ -16,11 +24,11 @@ class ProcessBot::Logger
     options.fetch(:log_file_path)
   end
 
-  def logging?
+  def log_to_file?
     options.present?(:log_file_path)
   end
 
   def fp_log
-    @fp_log ||= File.open(log_file_path, "a") if logging?
+    @fp_log ||= File.open(log_file_path, "a") if log_to_file?
   end
 end
