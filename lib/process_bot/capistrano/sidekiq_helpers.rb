@@ -40,7 +40,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
       "--command #{command} " \
       "--port #{process_bot_data.fetch("port")}"
 
-    if command == :graceful && fetch(:process_bot_wait_for_gracefully_stopped)
+    if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
       backend_command << " --wait-for-gracefully-stopped #{fetch(:process_bot_wait_for_gracefully_stopped)}"
     end
 
