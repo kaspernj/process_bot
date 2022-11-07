@@ -77,7 +77,12 @@ class ProcessBot::Process
     raise "Sidekiq not running with a PID" unless current_pid
 
     Process.kill("TSTP", current_pid)
-    wait_for_no_jobs_and_stop_sidekiq
+
+    if options[:wait_for_gracefully_stopped] == "false"
+      Thread.new { wait_for_no_jobs_and_stop_sidekiq }
+    else
+      wait_for_no_jobs_and_stop_sidekiq
+    end
   end
 
   def stop

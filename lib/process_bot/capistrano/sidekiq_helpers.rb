@@ -35,10 +35,16 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
   def process_bot_command(process_bot_data, command)
     raise "No port in process bot data? #{process_bot_data}" unless process_bot_data["port"]
 
-    backend.execute "cd #{release_path} && " \
+    backend_command = "cd #{release_path} && " \
       "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
       "--command #{command} " \
       "--port #{process_bot_data.fetch("port")}"
+
+    if command == :graceful && fetch(:process_bot_wait_for_gracefully_stopped)
+      backend_command << " --wait-for-gracefully-stopped #{fetch(:process_bot_wait_for_gracefully_stopped)}"
+    end
+
+    backend.execute backend_command
   end
 
   def running_process_bot_processes
