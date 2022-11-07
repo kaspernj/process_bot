@@ -27,7 +27,13 @@ class ProcessBot::Options
   def application_basename
     @application_basename ||= begin
       app_path_parts = release_path.split("/")
-      app_path_parts.pop(2)
+
+      if release_path.include?("/releases/")
+        app_path_parts.pop(2)
+      elsif release_path.end_with?("/current")
+        app_path_parts.pop
+      end
+
       app_path_parts.last
     end
   end
