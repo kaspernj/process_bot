@@ -110,7 +110,7 @@ class ProcessBot::Process
         next unless process_pid == current_pid
 
         found_process = true
-        sidekiq_regex = /\Asidekiq (\d+).(\d+).(\d+) (#{options.possible_process_titles_joined_regex}) \[(\d+) of (\d+) (.+?)\]\Z/
+        sidekiq_regex = /\Asidekiq (\d+).(\d+).(\d+) (#{options.possible_process_titles_joined_regex}) \[(\d+) of (\d+)(\]|) (.+?)(\]|)\Z/
         match = process_command.match(sidekiq_regex)
         raise "Couldnt match Sidekiq command: #{process_command} with Sidekiq regex: #{sidekiq_regex}" unless match
 
