@@ -17,12 +17,15 @@ class ProcessBot::ClientSocket
 
   def send_command(data)
     client.puts(JSON.generate(data))
-    response = JSON.parse(client.gets)
+    response_raw = client.gets
 
-    if response.fetch("type") == "success"
-      true
-    elsif response.fetch("type") == "error"
-      raise "Command raised an error: #{response.fetch("message")}"
-    end
+    # Happens if process is interrupted
+    return :nil if response_raw.nil?
+
+    response = JSON.parse(response_raw)
+
+    return :success if response.fetch("type") == "success"
+
+    raise "Command raised an error: #{response.fetch("message")}" if response.fetch("type") == "error"
   end
 end
