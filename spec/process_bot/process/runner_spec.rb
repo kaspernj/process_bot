@@ -20,5 +20,23 @@ describe ProcessBot::Process::Runner do
 
       expect(runner.pid).to eq 342_132
     end
+
+    it "parses another format" do
+      options = ProcessBot::Options.new(application: "gratisbyggetilbud_rails")
+      runner = ProcessBot::Process::Runner.new(command: nil, logger: nil, options: options)
+
+      fake_process_output = [
+        "dev       342132  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 peak-flow-production [5 of 25 busy]"
+      ]
+
+      expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep sidekiq").and_return(fake_process_output.join("\n"))
+      expect(options).to receive(:application_basename).and_return("peak-flow-production")
+      expect(runner).to receive(:subprocess_pgid).and_return(1234).once
+      expect(Process).to receive(:getpgid).with(342_132).and_return(1234)
+
+      runner.find_sidekiq_pid.join
+
+      expect(runner.pid).to eq 342_132
+    end
   end
 end

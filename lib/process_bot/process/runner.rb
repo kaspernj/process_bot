@@ -75,7 +75,7 @@ class ProcessBot::Process::Runner
         Knj::Unix_proc.list("grep" => "sidekiq") do |process|
           cmd = process.data.fetch("cmd")
 
-          if /sidekiq ([0-9]+\.[0-9]+\.[0-9]+) #{Regexp.escape(sidekiq_app_name)}/.match?(cmd)
+          if /sidekiq ([0-9]+\.[0-9]+\.[0-9]+) (#{options.possible_process_titles_joined_regex})/.match?(cmd)
             sidekiq_pid = process.data.fetch("pid").to_i
 
             begin
