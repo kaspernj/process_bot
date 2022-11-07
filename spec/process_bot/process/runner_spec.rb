@@ -3,7 +3,10 @@ require "spec_helper"
 describe ProcessBot::Process::Runner do
   describe "#find_sidekiq_pid" do
     it "finds the Sidekiq PID by scanning processes and comparing the PGID" do
-      options = ProcessBot::Options.new(application: "gratisbyggetilbud_rails")
+      options = ProcessBot::Options.new(
+        application: "gratisbyggetilbud_rails",
+        release_path: "/home/dev/peak-flow-production/releases/20221107164955"
+      )
       runner = ProcessBot::Process::Runner.new(command: nil, logger: nil, options: options)
 
       fake_process_output = [

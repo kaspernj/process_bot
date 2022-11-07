@@ -25,7 +25,11 @@ class ProcessBot::Options
   end
 
   def application_basename
-    File.basename(Dir.pwd)
+    @application_basename ||= begin
+      app_path_parts = release_path.split("/")
+      app_path_parts.pop(2)
+      app_path_parts.last
+    end
   end
 
   def possible_process_titles
@@ -54,6 +58,10 @@ class ProcessBot::Options
     return true if options.key?(key) && options[key]
 
     false
+  end
+
+  def release_path
+    @release_path ||= fetch(:release_path)
   end
 
   def set(key, value)

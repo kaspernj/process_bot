@@ -60,7 +60,10 @@ describe ProcessBot::Process do
         "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25 busy]"
       ]
 
-      options = ProcessBot::Options.new(application: "gratisbyggetilbud_rails")
+      options = ProcessBot::Options.new(
+        application: "gratisbyggetilbud_rails",
+        release_path: "/home/dev/peak-flow-production/releases/20221107164955"
+      )
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
 
