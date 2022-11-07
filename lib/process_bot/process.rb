@@ -12,6 +12,8 @@ class ProcessBot::Process
 
     options.events.connect(:on_process_started, &method(:on_process_started)) # rubocop:disable Performance/MethodObjectAsBlock
     options.events.connect(:on_socket_opened, &method(:on_socket_opened)) # rubocop:disable Performance/MethodObjectAsBlock
+
+    logger.log("Options: #{options}")
   end
 
   def execute!
