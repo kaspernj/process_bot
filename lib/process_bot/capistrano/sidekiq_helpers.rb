@@ -106,7 +106,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
       "--handler", "sidekiq",
       "--bundle-prefix", SSHKit.config.command_map.prefix[:bundle].join(" "),
       "--sidekiq-environment", fetch(:sidekiq_env),
-      "--port", 7050 + idx,
+      "--port", idx + 7050,
       "--release-path", release_path
     ]
 
