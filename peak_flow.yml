@@ -15,6 +15,6 @@ builds:
   build_3:
     environment:
       RUBY_VERSION: 2.7.8
-    name: Ruby 2.7.8
+    name: Rubocop
     script:
       - bundle exec rubocop
