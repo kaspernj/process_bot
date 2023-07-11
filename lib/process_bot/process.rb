@@ -34,9 +34,13 @@ class ProcessBot::Process
 
   def handler_class
     @handler_class ||= begin
-      require_relative "process/handlers/#{options.fetch(:handler)}"
-      ProcessBot::Process::Handlers.const_get(StringCases.snake_to_camel(options.fetch(:handler)))
+      require_relative "process/handlers/#{handler_name}"
+      ProcessBot::Process::Handlers.const_get(StringCases.snake_to_camel(handler_name))
     end
+  end
+
+  def handler_name
+    @handler_name ||= options.fetch(:handler)
   end
 
   def logger
@@ -76,7 +80,10 @@ class ProcessBot::Process
   def graceful
     @stopped = true
 
-    raise "Sidekiq not running with a PID" unless current_pid
+    unless current_pid
+      warn "#{handler_name} not running with a PID"
+      return
+    end
 
     Process.kill("TSTP", current_pid)
 
@@ -90,7 +97,10 @@ class ProcessBot::Process
   def stop
     @stopped = true
 
-    raise "Sidekiq not running with a PID" unless current_pid
+    unless current_pid
+      warn "#{handler_name} not running with a PID"
+      return
+    end
 
     Process.kill("TERM", current_pid)
   end
