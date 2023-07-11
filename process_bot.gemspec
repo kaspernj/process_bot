@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "Run and control processes."
   spec.homepage = "https://github.com/kaspernj/process_bot"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 2.6.0"
+  spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "knjrbfw", ">= 0.0.115"
+  spec.add_dependency "knjrbfw", ">= 0.0.116"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 end
