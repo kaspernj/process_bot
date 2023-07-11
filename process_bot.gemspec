@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "knjrbfw", ">= 0.0.115"
+  spec.add_dependency "knjrbfw", ">= 0.0.116"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 end
