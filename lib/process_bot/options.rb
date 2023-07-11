@@ -20,8 +20,8 @@ class ProcessBot::Options
     end
   end
 
-  def fetch(*args, **opts, &blk)
-    options.fetch(*args, **opts, &blk)
+  def fetch(...)
+    options.fetch(...)
   end
 
   def application_basename
