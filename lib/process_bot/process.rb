@@ -112,7 +112,7 @@ class ProcessBot::Process
   end
 
   def update_process_title
-    process_args = {application: options[:application], handler: options.fetch(:handler), id: options[:id], pid: current_pid, port: port}
+    process_args = {application: options[:application], handler: handler_name, id: options[:id], pid: current_pid, port: port}
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
   end
