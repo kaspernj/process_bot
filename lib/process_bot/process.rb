@@ -71,14 +71,14 @@ class ProcessBot::Process
       if stopped
         break
       else
-        puts "Process stopped - starting again after 1 sec"
+        logger.log "Process stopped - starting again after 1 sec"
         sleep 1
       end
     end
   end
 
   def daemonize
-    puts "DAEMONIZE!"
+    logger.log "DAEMONIZE!"
 
     pid = fork do
       Process.daemon
@@ -99,14 +99,14 @@ class ProcessBot::Process
     Process.kill("TSTP", current_pid)
 
     if options[:wait_for_gracefully_stopped] == "false"
-      puts "Dont wait for gracefully stopped!"
+      logger.log "Dont wait for gracefully stopped!"
 
       daemonize do
         wait_for_no_jobs_and_stop_sidekiq
         exit
       end
     else
-      puts "WAIT FOR GRACEFULLY STOPPED!"
+      logger.log "WAIT FOR GRACEFULLY STOPPED!"
 
       wait_for_no_jobs_and_stop_sidekiq
     end
@@ -151,7 +151,7 @@ class ProcessBot::Process
 
         running_jobs = match[5].to_i
 
-        puts "running_jobs: #{running_jobs}"
+        logger.log "running_jobs: #{running_jobs}"
 
         return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
       end
@@ -163,7 +163,7 @@ class ProcessBot::Process
   end
 
   def wait_for_no_jobs_and_stop_sidekiq
-    puts "Wait for no jobs and Stop sidekiq"
+    logger.log "Wait for no jobs and Stop sidekiq"
 
     wait_for_no_jobs
     stop
