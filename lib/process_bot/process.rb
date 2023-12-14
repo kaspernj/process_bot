@@ -78,13 +78,14 @@ class ProcessBot::Process
   end
 
   def daemonize
-    fork do
-      Process.setsid
-      fork do
-        Dir.chdir "/"
-        yield
-      end
+    puts "DAEMONIZE!"
+
+    pid = fork do
+      Process.daemon
+      yield
     end
+
+    Process.detach(pid) if pid
   end
 
   def graceful
@@ -98,11 +99,15 @@ class ProcessBot::Process
     Process.kill("TSTP", current_pid)
 
     if options[:wait_for_gracefully_stopped] == "false"
+      puts "Dont wait for gracefully stopped!"
+
       daemonize do
         wait_for_no_jobs_and_stop_sidekiq
         exit
       end
     else
+      puts "WAIT FOR GRACEFULLY STOPPED!"
+
       wait_for_no_jobs_and_stop_sidekiq
     end
   end
