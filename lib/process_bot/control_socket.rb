@@ -8,6 +8,10 @@ class ProcessBot::ControlSocket
     @process = process
   end
 
+  def logger
+    @logger ||= ProcessBot::Logger.new(options: options)
+  end
+
   def port
     options.fetch(:port).to_i
   end
@@ -16,7 +20,7 @@ class ProcessBot::ControlSocket
     @server = TCPServer.new("localhost", port)
     run_client_loop
 
-    puts "TCPServer started"
+    logger.log "TCPServer started"
 
     options.events.call(:on_socket_opened, port: port)
   end
@@ -50,6 +54,8 @@ class ProcessBot::ControlSocket
           else
             {}
           end
+
+          logger.log "Command #{command_type} with options #{command_options}"
 
           process.__send__(command_type, **command_options)
           client.puts(JSON.generate(type: "success"))
