@@ -45,7 +45,13 @@ class ProcessBot::ControlSocket
 
       if command_type == "graceful" || command_type == "stop"
         begin
-          process.__send__(command_type)
+          command_options = if command["options"]
+            command.fetch("options").symbolize_keys
+          else
+            {}
+          end
+
+          process.__send__(command_type, **command_options)
           client.puts(JSON.generate(type: "success"))
         rescue => e # rubocop:disable Style/RescueStandardError
           client.puts(JSON.generate(type: "error", message: e.message))

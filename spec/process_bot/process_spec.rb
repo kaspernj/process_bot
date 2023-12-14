@@ -16,7 +16,7 @@ describe ProcessBot::Process do
 
     it "sends a stop command through the client socket" do
       fake_client = instance_double(TCPSocket)
-      expect(fake_client).to receive(:puts).with("{\"command\":\"stop\"}")
+      expect(fake_client).to receive(:puts).with("{\"command\":\"stop\",\"options\":{\"command\":\"stop\",\"port\":7050}}")
       expect(fake_client).to receive(:gets).with(no_args).and_return(JSON.generate(type: "success"))
       expect_any_instance_of(ProcessBot::ClientSocket).to receive(:client).at_least(:once).and_return(fake_client)
 
@@ -27,7 +27,7 @@ describe ProcessBot::Process do
 
     it "sends a graceful command through the client socket" do
       fake_client = instance_double(TCPSocket)
-      expect(fake_client).to receive(:puts).with("{\"command\":\"graceful\"}")
+      expect(fake_client).to receive(:puts).with("{\"command\":\"graceful\",\"options\":{\"command\":\"graceful\",\"port\":7050}}")
       expect(fake_client).to receive(:gets).with(no_args).and_return(JSON.generate(type: "success"))
       expect_any_instance_of(ProcessBot::ClientSocket).to receive(:client).at_least(:once).and_return(fake_client)
 

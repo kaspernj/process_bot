@@ -22,7 +22,7 @@ class ProcessBot::Process
     if command == "start"
       start
     elsif command == "graceful" || command == "stop"
-      client.send_command(command: command)
+      client.send_command(command: command, options: options.options)
     else
       raise "Unknown command: #{command}"
     end
@@ -88,7 +88,7 @@ class ProcessBot::Process
     Process.detach(pid) if pid
   end
 
-  def graceful
+  def graceful(wait_for_gracefully_stopped: "true")
     @stopped = true
 
     unless current_pid
@@ -98,7 +98,7 @@ class ProcessBot::Process
 
     Process.kill("TSTP", current_pid)
 
-    if options[:wait_for_gracefully_stopped] == "false"
+    if wait_for_gracefully_stopped == "false"
       logger.log "Dont wait for gracefully stopped!"
 
       daemonize do
