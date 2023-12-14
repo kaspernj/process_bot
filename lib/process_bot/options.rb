@@ -5,7 +5,7 @@ class ProcessBot::Options
     options = ProcessBot::Options.new
 
     args.each do |key, value|
-      options.set(key value)
+      options.set(key, value)
     end
 
     options
