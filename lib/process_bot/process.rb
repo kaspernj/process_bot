@@ -77,12 +77,12 @@ class ProcessBot::Process
     end
   end
 
-  def daemonize(&blk)
+  def daemonize
     fork do
       Process.setsid
       fork do
         Dir.chdir "/"
-        blk.call
+        yield
       end
     end
   end
