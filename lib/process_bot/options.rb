@@ -1,6 +1,16 @@
 class ProcessBot::Options
   attr_reader :options
 
+  def self.from_args(args)
+    options = ProcessBot::Options.new
+
+    args.each do |key, value|
+      options.set(key value)
+    end
+
+    options
+  end
+
   def initialize(options = {})
     @options = options
   end
