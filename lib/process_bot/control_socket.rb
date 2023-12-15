@@ -1,28 +1,36 @@
 require "socket"
 
 class ProcessBot::ControlSocket
-  attr_reader :options, :process, :server
+  attr_reader :options, :port, :process, :server
 
   def initialize(options:, process:)
     @options = options
     @process = process
+    @port = options.fetch(:port).to_i
   end
 
   def logger
     @logger ||= ProcessBot::Logger.new(options: options)
   end
 
-  def port
-    options.fetch(:port).to_i
+  def start
+    start_tcp_server
+    run_client_loop
+    logger.logs "TCPServer started"
+    options.events.call(:on_socket_opened, port: @port)
   end
 
-  def start
-    @server = TCPServer.new("localhost", port)
-    run_client_loop
-
-    logger.logs "TCPServer started"
-
-    options.events.call(:on_socket_opened, port: port)
+  def start_tcp_server
+    tries ||= 0
+    tries += 1
+    @server = TCPServer.new("localhost", @port)
+  rescue Errno::EADDRINUSE => e
+    if tries <= 100
+      @port += 1
+      retry
+    else
+      raise e
+    end
   end
 
   def stop
