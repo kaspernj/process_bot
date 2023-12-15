@@ -18,6 +18,12 @@ while argv_i < ARGV.length
 
   if (match = arg.match(/\A--(.+)\Z/))
     key = match[1].tr("-", "_").to_sym
+
+    if key == :path
+      puts "Path: #{File.realpath("#{__dir__}/..")}"
+      exit
+    end
+
     argv_i += 1
     value = ARGV.fetch(argv_i)
 
