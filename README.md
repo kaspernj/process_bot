@@ -2,7 +2,7 @@
 
 Run your app through ProcessBot for automatic restart if crashing, but still support normal deployment through Capistrano.
 
-In the future ProcessBot will also watch memory usage and restart processes if leaking memory automatically and gracefully.
+Watch memory usage for Sidekiq and restart gracefully if it exceeds a given limit (to counter memory leaks).
 
 ## Installation
 
