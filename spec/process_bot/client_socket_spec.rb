@@ -13,7 +13,7 @@ describe ProcessBot::ClientSocket do
     control_socket.start
 
     begin
-      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: 7086))
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: control_socket.port))
 
       begin
         client_socket.send_command(command: "stop")
@@ -37,7 +37,7 @@ describe ProcessBot::ClientSocket do
     rescued_error = nil
 
     begin
-      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: 7086))
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: control_socket.port))
 
       begin
         client_socket.send_command(command: "asd")
@@ -70,7 +70,7 @@ describe ProcessBot::ClientSocket do
     control_socket.start
 
     begin
-      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(command: "graceful", port: 7086))
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(command: "graceful", port: control_socket.port))
 
       begin
         client_socket.send_command(command: "graceful")
@@ -101,7 +101,7 @@ describe ProcessBot::ClientSocket do
     control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
     control_socket.start
 
-    client_socket_options = ProcessBot::Options.new(port: 7086, wait_for_gracefully_stopped: false)
+    client_socket_options = ProcessBot::Options.new(port: control_socket.port, wait_for_gracefully_stopped: false)
     client_socket = ProcessBot::ClientSocket.new(options: client_socket_options)
 
     begin
