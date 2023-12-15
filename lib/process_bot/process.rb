@@ -86,6 +86,10 @@ class ProcessBot::Process
     handler_instance.graceful(args)
   end
 
+  def set_stopped
+    @stopped = true
+  end
+
   def run
     runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
     runner.run

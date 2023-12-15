@@ -23,6 +23,8 @@ describe ProcessBot::ClientSocket do
     ensure
       control_socket.stop
     end
+
+    expect(process).to have_attributes(stopped: true)
   end
 
   it "rescues errors and forwards them with backtrace" do
@@ -49,6 +51,7 @@ describe ProcessBot::ClientSocket do
     end
 
     expect(rescued_error.message).to eq "Command raised an error: Unknown command: asd"
+    expect(process).to have_attributes(stopped: false)
   end
 
   it "sends a graceful stop command to the server" do
@@ -77,6 +80,8 @@ describe ProcessBot::ClientSocket do
     ensure
       control_socket.stop
     end
+
+    expect(process).to have_attributes(stopped: true)
   end
 
   it "sends a graceful stop command to the server" do
@@ -108,5 +113,7 @@ describe ProcessBot::ClientSocket do
     ensure
       control_socket.stop
     end
+
+    expect(process).to have_attributes(stopped: true)
   end
 end

@@ -69,10 +69,10 @@ class ProcessBot::Process::Handlers::Sidekiq
 
   def graceful(args = {})
     wait_for_gracefully_stopped = args.fetch(:wait_for_gracefully_stopped, true)
-    @stopped = true
+    process.set_stopped
 
     unless current_pid
-      warn "#{handler_name} not running with a PID"
+      warn "Sidekiq not running with a PID"
       return
     end
 
@@ -95,7 +95,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def stop(_args = {})
-    @stopped = true
+    process.set_stopped
 
     unless current_pid
       warn "#{handler_name} not running with a PID"
