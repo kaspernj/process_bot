@@ -4,6 +4,9 @@ Run your app through ProcessBot for automatic restart if crashing, but still sup
 
 Watch memory usage for Sidekiq and restart gracefully if it exceeds a given limit (to counter memory leaks).
 
+When deploying can gracefully exit Sidekiq to let long running jobs finish on old version of code, and start new Sidekiq processes after finishing deploy (but still let the old ones finish gracefully so nothing gets interrupted).
+This requires not to remove columns, rename columns or any other intrusive database changes.
+
 ## Installation
 
 Add this line to your application's Gemfile:
