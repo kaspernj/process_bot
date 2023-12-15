@@ -25,6 +25,32 @@ describe ProcessBot::ClientSocket do
     end
   end
 
+  it "rescues errors and forwards them with backtrace" do
+    options = ProcessBot::Options.new(handler: "sidekiq")
+    process = ProcessBot::Process.new(options)
+
+    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
+    control_socket.start
+
+    rescued_error = nil
+
+    begin
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: 7086))
+
+      begin
+        client_socket.send_command(command: "asd")
+      rescue => error
+        rescued_error = error
+      ensure
+        client_socket.close
+      end
+    ensure
+      control_socket.stop
+    end
+
+    expect(rescued_error.message).to eq "Command raised an error: Unknown command: asd"
+  end
+
   it "sends a graceful stop command to the server" do
     options = ProcessBot::Options.new(handler: "sidekiq")
     process = ProcessBot::Process.new(options)

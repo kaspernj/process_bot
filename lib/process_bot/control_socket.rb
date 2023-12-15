@@ -68,7 +68,7 @@ class ProcessBot::ControlSocket
           raise e
         end
       else
-        client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}"))
+        client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}", backtrace: Thread.current.backtrace))
       end
     end
   end
