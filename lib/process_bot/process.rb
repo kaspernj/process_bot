@@ -1,6 +1,13 @@
+require "forwardable"
 require "json"
+require "string-cases"
 
 class ProcessBot::Process
+  extend Forwardable
+
+  def_delegator :handler_instance, :graceful
+  def_delegator :handler_instance, :stop
+
   autoload :Handlers, "#{__dir__}/process/handlers"
   autoload :Runner, "#{__dir__}/process/runner"
 
@@ -13,7 +20,7 @@ class ProcessBot::Process
     options.events.connect(:on_process_started, &method(:on_process_started)) # rubocop:disable Performance/MethodObjectAsBlock
     options.events.connect(:on_socket_opened, &method(:on_socket_opened)) # rubocop:disable Performance/MethodObjectAsBlock
 
-    logger.log("Options: #{options.options}")
+    logger.logs("ProcessBot 1 - Options: #{options.options}")
   end
 
   def execute!
@@ -22,7 +29,7 @@ class ProcessBot::Process
     if command == "start"
       start
     elsif command == "graceful" || command == "stop"
-      client.send_command(command: command)
+      client.send_command(command: command, options: options.options)
     else
       raise "Unknown command: #{command}"
     end
@@ -37,6 +44,10 @@ class ProcessBot::Process
       require_relative "process/handlers/#{handler_name}"
       ProcessBot::Process::Handlers.const_get(StringCases.snake_to_camel(handler_name))
     end
+  end
+
+  def handler_instance
+    @handler_instance ||= handler_class.new(self)
   end
 
   def handler_name
@@ -71,55 +82,17 @@ class ProcessBot::Process
       if stopped
         break
       else
-        puts "Process stopped - starting again after 1 sec"
+        logger.logs "Process stopped - starting again after 1 sec"
         sleep 1
       end
     end
   end
 
-  def daemonize
-    fork do
-      Process.setsid
-      fork do
-        Dir.chdir "/"
-        yield
-      end
-    end
-  end
-
-  def graceful
+  def set_stopped
     @stopped = true
-
-    unless current_pid
-      warn "#{handler_name} not running with a PID"
-      return
-    end
-
-    Process.kill("TSTP", current_pid)
-
-    if options[:wait_for_gracefully_stopped] == "false"
-      daemonize do
-        wait_for_no_jobs_and_stop_sidekiq
-        exit
-      end
-    else
-      wait_for_no_jobs_and_stop_sidekiq
-    end
-  end
-
-  def stop
-    @stopped = true
-
-    unless current_pid
-      warn "#{handler_name} not running with a PID"
-      return
-    end
-
-    Process.kill("TERM", current_pid)
   end
 
   def run
-    handler_instance = handler_class.new(options)
     runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
     runner.run
   end
@@ -128,39 +101,5 @@ class ProcessBot::Process
     process_args = {application: options[:application], handler: handler_name, id: options[:id], pid: current_pid, port: port}
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
-  end
-
-  def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
-    loop do
-      found_process = false
-
-      Knj::Unix_proc.list("grep" => current_pid) do |process|
-        process_command = process.data.fetch("cmd")
-        process_pid = process.data.fetch("pid").to_i
-        next unless process_pid == current_pid
-
-        found_process = true
-        sidekiq_regex = /\Asidekiq (\d+).(\d+).(\d+) (#{options.possible_process_titles_joined_regex}) \[(\d+) of (\d+)(\]|) (.+?)(\]|)\Z/
-        match = process_command.match(sidekiq_regex)
-        raise "Couldnt match Sidekiq command: #{process_command} with Sidekiq regex: #{sidekiq_regex}" unless match
-
-        running_jobs = match[5].to_i
-
-        puts "running_jobs: #{running_jobs}"
-
-        return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
-      end
-
-      raise "Couldn't find running process with PID #{current_pid}" unless found_process
-
-      sleep 1
-    end
-  end
-
-  def wait_for_no_jobs_and_stop_sidekiq
-    puts "Wait for no jobs and Stop sidekiq"
-
-    wait_for_no_jobs
-    stop
   end
 end

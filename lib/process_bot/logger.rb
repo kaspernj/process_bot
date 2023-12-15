@@ -6,7 +6,7 @@ class ProcessBot::Logger
   end
 
   def log(output, type: :stdout)
-    if type == :stdout
+    if type == :stdout || (type == :debug && options[:debug])
       $stdout.print output
     elsif type == :stderr
       $stderr.print output
@@ -18,6 +18,10 @@ class ProcessBot::Logger
 
     fp_log.write(output)
     fp_log.flush
+  end
+
+  def logs(output, **args)
+    log("#{output}\n", **args)
   end
 
   def log_file_path

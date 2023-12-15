@@ -8,6 +8,10 @@ class ProcessBot::ControlSocket
     @process = process
   end
 
+  def logger
+    @logger ||= ProcessBot::Logger.new(options: options)
+  end
+
   def port
     options.fetch(:port).to_i
   end
@@ -16,7 +20,7 @@ class ProcessBot::ControlSocket
     @server = TCPServer.new("localhost", port)
     run_client_loop
 
-    puts "TCPServer started"
+    logger.logs "TCPServer started"
 
     options.events.call(:on_socket_opened, port: port)
   end
@@ -45,16 +49,38 @@ class ProcessBot::ControlSocket
 
       if command_type == "graceful" || command_type == "stop"
         begin
-          process.__send__(command_type)
+          command_options = if command["options"]
+            symbolize_keys(command.fetch("options"))
+          else
+            {}
+          end
+
+          logger.logs "Command #{command_type} with options #{command_options}"
+
+          process.__send__(command_type, **command_options)
           client.puts(JSON.generate(type: "success"))
         rescue => e # rubocop:disable Style/RescueStandardError
-          client.puts(JSON.generate(type: "error", message: e.message))
+          logger.logs e.message, type: :stderr
+          logger.logs e.backtrace, type: :stderr
+
+          client.puts(JSON.generate(type: "error", message: e.message, backtrace: e.backtrace))
 
           raise e
         end
       else
-        client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}"))
+        client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}", backtrace: Thread.current.backtrace))
       end
     end
+  end
+
+  def symbolize_keys(hash)
+    new_hash = {}
+    hash.each do |key, value|
+      next if key == "port"
+
+      new_hash[key.to_sym] = value
+    end
+
+    new_hash
   end
 end

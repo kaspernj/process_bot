@@ -1,12 +1,36 @@
 class ProcessBot::Process::Handlers::Sidekiq
-  attr_reader :options
+  attr_reader :options, :process
 
-  def initialize(options)
-    @options = options
+  def initialize(process)
+    @process = process
+    @options = process.options
+  end
+
+  def current_pid
+    process.current_pid
+  end
+
+  def daemonize
+    logger.logs "Daemonize!"
+
+    pid = Process.fork do
+      Process.daemon
+      yield
+    end
+
+    Process.detach(pid) if pid
+  end
+
+  def false_value?(value)
+    !value || value == "false"
   end
 
   def fetch(*args, **opts)
     options.fetch(*args, **opts)
+  end
+
+  def logger
+    @logger ||= ProcessBot::Logger.new(options: options)
   end
 
   def set_option(key, value)
@@ -41,5 +65,73 @@ class ProcessBot::Process::Handlers::Sidekiq
     command << "bundle exec sidekiq #{args.compact.join(' ')}"
     command << "'"
     command
+  end
+
+  def graceful(**args)
+    wait_for_gracefully_stopped = args.fetch(:wait_for_gracefully_stopped, true)
+    process.set_stopped
+
+    unless current_pid
+      warn "Sidekiq not running with a PID"
+      return
+    end
+
+    Process.kill("TSTP", current_pid)
+
+    if false_value?(wait_for_gracefully_stopped)
+      logger.logs "Dont wait for gracefully stopped - doing that in fork..."
+
+      daemonize do
+        wait_for_no_jobs_and_stop_sidekiq
+        exit
+      end
+    else
+      logger.logs "Wait for gracefully stopped..."
+      wait_for_no_jobs_and_stop_sidekiq
+    end
+  end
+
+  def stop(**_args)
+    process.set_stopped
+
+    unless current_pid
+      warn "#{handler_name} not running with a PID"
+      return
+    end
+
+    Process.kill("TERM", current_pid)
+  end
+
+  def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
+    loop do
+      found_process = false
+
+      Knj::Unix_proc.list("grep" => current_pid) do |process|
+        process_command = process.data.fetch("cmd")
+        process_pid = process.data.fetch("pid").to_i
+        next unless process_pid == current_pid
+
+        found_process = true
+        sidekiq_regex = /\Asidekiq (\d+).(\d+).(\d+) (#{options.possible_process_titles_joined_regex}) \[(\d+) of (\d+)(\]|) (.+?)(\]|)\Z/
+        match = process_command.match(sidekiq_regex)
+        raise "Couldnt match Sidekiq command: #{process_command} with Sidekiq regex: #{sidekiq_regex}" unless match
+
+        running_jobs = match[5].to_i
+
+        logger.logs "running_jobs: #{running_jobs}"
+
+        return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
+      end
+
+      raise "Couldn't find running process with PID #{current_pid}" unless found_process
+
+      sleep 1
+    end
+  end
+
+  def wait_for_no_jobs_and_stop_sidekiq
+    logger.logs "Wait for no jobs and Stop sidekiq"
+    wait_for_no_jobs
+    stop
   end
 end

@@ -7,7 +7,8 @@ describe ProcessBot::Process::Handlers::Sidekiq do
         bundle_prefix: "~/.rvm/bin/rvm 3.1.2 do",
         release_path: "/home/build/project/current"
       )
-      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(options)
+      process = ProcessBot::Process.new(options)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
 
       expect(sidekiq.start_command).to eq "bash -c 'cd /home/build/project/current && exec ~/.rvm/bin/rvm 3.1.2 do bundle exec sidekiq '"
     end
@@ -18,7 +19,8 @@ describe ProcessBot::Process::Handlers::Sidekiq do
         sidekiq_environment: "production",
         sidekiq_queue: "queue1,queue2,queue3"
       )
-      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(options)
+      process = ProcessBot::Process.new(options)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
 
       expect(sidekiq.start_command).to eq "bash -c 'cd /home/build/project/current && exec bundle exec sidekiq " \
         "--environment production " \

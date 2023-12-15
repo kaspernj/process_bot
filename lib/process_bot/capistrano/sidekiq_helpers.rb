@@ -32,16 +32,34 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     end
   end
 
-  def process_bot_command(process_bot_data, command)
+  def process_bot_command(process_bot_data, command) # rubocop:disable Metrics/AbcSize
     raise "No port in process bot data? #{process_bot_data}" unless process_bot_data["port"]
 
-    backend_command = "cd #{release_path} && " \
-      "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
-      "--command #{command} " \
-      "--port #{process_bot_data.fetch("port")}"
+    mode = "exec"
 
-    if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
-      backend_command << " --wait-for-gracefully-stopped #{fetch(:process_bot_wait_for_gracefully_stopped)}"
+    if mode == "runner"
+      args = {command: command, port: process_bot_data.fetch("port")}
+
+      if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
+        args["wait_for_gracefully_stopped"] = fetch(:process_bot_wait_for_gracefully_stopped)
+      end
+
+      escaped_args = JSON.generate(args).gsub("\"", "\\\"")
+      rails_runner_command = "require 'process_bot'; ProcessBot::Process.new(ProcessBot::Options.from_args(#{escaped_args})).execute!"
+
+      backend_command = "cd #{release_path} && " \
+        "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec rails runner \"#{rails_runner_command}\""
+    elsif mode == "exec"
+      backend_command = "cd #{release_path} && " \
+        "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
+        "--command #{command} " \
+        "--port #{process_bot_data.fetch("port")}"
+
+      if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
+        backend_command << " --wait-for-gracefully-stopped #{fetch(:process_bot_wait_for_gracefully_stopped)}"
+      end
+    else
+      raise "Unknown mode: #{mode}"
     end
 
     backend.execute backend_command
@@ -126,7 +144,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     screen_args = ["-dmS process-bot--sidekiq--#{idx}-#{latest_release_version}"]
 
     if (process_bot_sidekiq_log = fetch(:process_bot_sidekig_log))
-      screen_args << "-L -Logfile #{process_bot_sidekiq_log}"
+      screen_args << "-L -Logfile #{process_bot_sidekiq_log}_#{latest_release_version}_#{idx}.log"
     elsif fetch(:sidekiq_log)
       screen_args << "-L -Logfile #{fetch(:sidekiq_log)}"
     end

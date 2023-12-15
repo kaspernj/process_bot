@@ -8,14 +8,19 @@ class ProcessBot::ClientSocket
   end
 
   def client
-    @client ||= TCPSocket.new("localhost", options.fetch(:port).to_i)
+    @client ||= Socket.tcp("localhost", options.fetch(:port).to_i, connect_timeout: 2)
   end
 
   def close
     client.close
   end
 
-  def send_command(data)
+  def logger
+    @logger ||= ProcessBot::Logger.new(options: options)
+  end
+
+  def send_command(data) # rubocop:disable Metrics/AbcSize
+    logger.log "Sending: #{data}"
     client.puts(JSON.generate(data))
     response_raw = client.gets
 
@@ -26,6 +31,11 @@ class ProcessBot::ClientSocket
 
     return :success if response.fetch("type") == "success"
 
-    raise "Command raised an error: #{response.fetch("message")}" if response.fetch("type") == "error"
+    if response.fetch("type") == "error"
+      error = RuntimeError.new("Command raised an error: #{response.fetch("message")}")
+      error.set_backtrace(response.fetch("backtrace") + Thread.current.backtrace)
+
+      raise error
+    end
   end
 end
