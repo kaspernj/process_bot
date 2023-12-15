@@ -68,7 +68,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def graceful(args = {})
-    wait_for_gracefully_stopped = args[:wait_for_gracefully_stopped]
+    wait_for_gracefully_stopped = args.fetch(:wait_for_gracefully_stopped, true)
     @stopped = true
 
     unless current_pid

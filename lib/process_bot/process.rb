@@ -82,8 +82,8 @@ class ProcessBot::Process
     end
   end
 
-  def graceful(wait_for_gracefully_stopped: true)
-    handler_instance.graceful(wait_for_gracefully_stopped: wait_for_gracefully_stopped)
+  def graceful(args = {})
+    handler_instance.graceful(args)
   end
 
   def run
@@ -91,8 +91,8 @@ class ProcessBot::Process
     runner.run
   end
 
-  def stop
-    handler_instance.stop
+  def stop(args = {})
+    handler_instance.stop(args)
   end
 
   def update_process_title
