@@ -77,6 +77,8 @@ class ProcessBot::Process::Handlers::Sidekiq
 
     Process.kill("TSTP", current_pid)
 
+    logger.log "wait_for_gracefully_stopped: #{wait_for_gracefully_stopped}"
+
     if false_value?(wait_for_gracefully_stopped)
       logger.log "Dont wait for gracefully stopped!"
 
