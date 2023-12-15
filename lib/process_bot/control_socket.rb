@@ -63,7 +63,7 @@ class ProcessBot::ControlSocket
           logger.log e.message, type: :stderr
           logger.log e.backtrace, type: :stderr
 
-          client.puts(JSON.generate(type: "error", message: e.message))
+          client.puts(JSON.generate(type: "error", message: e.message, backtrace: e.backtrace))
 
           raise e
         end

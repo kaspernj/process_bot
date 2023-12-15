@@ -31,6 +31,14 @@ class ProcessBot::ClientSocket
 
     return :success if response.fetch("type") == "success"
 
-    raise "Command raised an error: #{response.fetch("message")}" if response.fetch("type") == "error"
+    if response.fetch("type") == "error"
+      error = RuntimeError.new("Command raised an error: #{response.fetch("message")}" )
+
+      response.fetch("backtrace").each do |trace|
+        error.backtrace.prepend(trace)
+      end
+
+      raise error
+    end
   end
 end

@@ -62,17 +62,18 @@ describe ProcessBot::Process do
 
       options = ProcessBot::Options.new(
         application: "gratisbyggetilbud_rails",
+        handler: "sidekiq",
         release_path: "/home/dev/peak-flow-production/releases/20221107164955"
       )
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
 
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output1.join("\n"))
-      expect(process).to receive(:sleep).with(1)
+      expect(process.handler_instance).to receive(:sleep).with(1)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output2.join("\n"))
       expect(Process).to receive(:kill).with("TERM", 342_132)
 
-      process.wait_for_no_jobs_and_stop_sidekiq
+      process.handler_instance.wait_for_no_jobs_and_stop_sidekiq
     end
 
     it "waits for Sidekiq to have no running jobs and then terminates it (new syntax)" do
@@ -87,17 +88,18 @@ describe ProcessBot::Process do
 
       options = ProcessBot::Options.new(
         application: "gratisbyggetilbud_rails",
+        handler: "sidekiq",
         release_path: "/home/dev/peak-flow-production/releases/20221107164955"
       )
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
 
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output1.join("\n"))
-      expect(process).to receive(:sleep).with(1)
+      expect(process.handler_instance).to receive(:sleep).with(1)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output2.join("\n"))
       expect(Process).to receive(:kill).with("TERM", 342_132)
 
-      process.wait_for_no_jobs_and_stop_sidekiq
+      process.handler_instance.wait_for_no_jobs_and_stop_sidekiq
     end
   end
 end
