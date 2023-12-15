@@ -19,7 +19,7 @@ class ProcessBot::ClientSocket
     @logger ||= ProcessBot::Logger.new(options: options)
   end
 
-  def send_command(data)
+  def send_command(data) # rubocop:disable Metrics/AbcSize
     logger.log "Sending: #{data}"
     client.puts(JSON.generate(data))
     response_raw = client.gets
@@ -32,7 +32,7 @@ class ProcessBot::ClientSocket
     return :success if response.fetch("type") == "success"
 
     if response.fetch("type") == "error"
-      error = RuntimeError.new("Command raised an error: #{response.fetch("message")}" )
+      error = RuntimeError.new("Command raised an error: #{response.fetch("message")}")
       error.set_backtrace(response.fetch("backtrace") + Thread.current.backtrace)
 
       raise error

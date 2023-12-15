@@ -20,7 +20,7 @@ class ProcessBot::ControlSocket
     @server = TCPServer.new("localhost", port)
     run_client_loop
 
-    logger.log "TCPServer started"
+    logger.logs "TCPServer started"
 
     options.events.call(:on_socket_opened, port: port)
   end
@@ -55,13 +55,13 @@ class ProcessBot::ControlSocket
             {}
           end
 
-          logger.log "Command #{command_type} with options #{command_options}"
+          logger.logs "Command #{command_type} with options #{command_options}"
 
           process.__send__(command_type, **command_options)
           client.puts(JSON.generate(type: "success"))
         rescue => e # rubocop:disable Style/RescueStandardError
-          logger.log e.message, type: :stderr
-          logger.log e.backtrace, type: :stderr
+          logger.logs e.message, type: :stderr
+          logger.logs e.backtrace, type: :stderr
 
           client.puts(JSON.generate(type: "error", message: e.message, backtrace: e.backtrace))
 

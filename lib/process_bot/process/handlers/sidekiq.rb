@@ -11,7 +11,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def daemonize
-    logger.log "DAEMONIZE!"
+    logger.logs "Daemonize!"
 
     pid = Process.fork do
       Process.daemon
@@ -78,18 +78,15 @@ class ProcessBot::Process::Handlers::Sidekiq
 
     Process.kill("TSTP", current_pid)
 
-    logger.log "wait_for_gracefully_stopped: #{wait_for_gracefully_stopped}"
-
     if false_value?(wait_for_gracefully_stopped)
-      logger.log "Dont wait for gracefully stopped!"
+      logger.logs "Dont wait for gracefully stopped - doing that in fork..."
 
       daemonize do
         wait_for_no_jobs_and_stop_sidekiq
         exit
       end
     else
-      logger.log "WAIT FOR GRACEFULLY STOPPED!"
-
+      logger.logs "Wait for gracefully stopped..."
       wait_for_no_jobs_and_stop_sidekiq
     end
   end
@@ -121,7 +118,7 @@ class ProcessBot::Process::Handlers::Sidekiq
 
         running_jobs = match[5].to_i
 
-        logger.log "running_jobs: #{running_jobs}"
+        logger.logs "running_jobs: #{running_jobs}"
 
         return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
       end
@@ -133,8 +130,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def wait_for_no_jobs_and_stop_sidekiq
-    logger.log "Wait for no jobs and Stop sidekiq"
-
+    logger.logs "Wait for no jobs and Stop sidekiq"
     wait_for_no_jobs
     stop
   end

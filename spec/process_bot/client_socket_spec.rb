@@ -41,8 +41,8 @@ describe ProcessBot::ClientSocket do
 
       begin
         client_socket.send_command(command: "asd")
-      rescue => error
-        rescued_error = error
+      rescue => e # rubocop:disable Style/RescueStandardError
+        rescued_error = e
       ensure
         client_socket.close
       end
@@ -84,7 +84,7 @@ describe ProcessBot::ClientSocket do
     expect(process).to have_attributes(stopped: true)
   end
 
-  it "sends a graceful stop command to the server" do
+  it "sends a graceful stop command to the server with 'wait_for_gracefully_stopped'" do
     options = ProcessBot::Options.new(handler: "sidekiq")
     process = ProcessBot::Process.new(options)
     process.instance_variable_set(:@current_pid, 1234)

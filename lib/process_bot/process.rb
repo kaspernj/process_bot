@@ -14,7 +14,7 @@ class ProcessBot::Process
     options.events.connect(:on_process_started, &method(:on_process_started)) # rubocop:disable Performance/MethodObjectAsBlock
     options.events.connect(:on_socket_opened, &method(:on_socket_opened)) # rubocop:disable Performance/MethodObjectAsBlock
 
-    logger.log("ProcessBot 1 - Options: #{options.options}")
+    logger.logs("ProcessBot 1 - Options: #{options.options}")
   end
 
   def execute!
@@ -76,7 +76,7 @@ class ProcessBot::Process
       if stopped
         break
       else
-        logger.log "Process stopped - starting again after 1 sec"
+        logger.logs "Process stopped - starting again after 1 sec"
         sleep 1
       end
     end

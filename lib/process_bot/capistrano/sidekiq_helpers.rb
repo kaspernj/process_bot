@@ -32,7 +32,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     end
   end
 
-  def process_bot_command(process_bot_data, command)
+  def process_bot_command(process_bot_data, command) # rubocop:disable Metrics/AbcSize
     raise "No port in process bot data? #{process_bot_data}" unless process_bot_data["port"]
 
     mode = "exec"
