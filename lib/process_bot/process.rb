@@ -1,7 +1,13 @@
+require "forwardable"
 require "json"
 require "string-cases"
 
 class ProcessBot::Process
+  extend Forwardable
+
+  def_delegator :handler_instance, :graceful
+  def_delegator :handler_instance, :stop
+
   autoload :Handlers, "#{__dir__}/process/handlers"
   autoload :Runner, "#{__dir__}/process/runner"
 
@@ -82,10 +88,6 @@ class ProcessBot::Process
     end
   end
 
-  def graceful(**args)
-    handler_instance.graceful(**args)
-  end
-
   def set_stopped
     @stopped = true
   end
@@ -93,10 +95,6 @@ class ProcessBot::Process
   def run
     runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
     runner.run
-  end
-
-  def stop(**args)
-    handler_instance.stop(**args)
   end
 
   def update_process_title

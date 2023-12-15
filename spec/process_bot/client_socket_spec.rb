@@ -60,7 +60,7 @@ describe ProcessBot::ClientSocket do
     process.instance_variable_set(:@current_pid, 1234)
 
     expect(process).to receive(:graceful).and_call_original
-    expect(process.handler_instance).to receive(:graceful).with(no_args).and_call_original
+    expect(process.handler_instance).to receive(:graceful).and_call_original
     expect(Process).to receive(:kill).with("TSTP", 1234)
     expect(process.handler_instance).to receive(:wait_for_no_jobs_and_stop_sidekiq).and_call_original
     expect(process.handler_instance).to receive(:wait_for_no_jobs)
