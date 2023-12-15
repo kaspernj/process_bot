@@ -8,7 +8,7 @@ class ProcessBot::ClientSocket
   end
 
   def client
-    @client ||= TCPSocket.new("localhost", options.fetch(:port).to_i)
+    @client ||= Socket.tcp("localhost", options.fetch(:port).to_i, connect_timeout: 2)
   end
 
   def close
