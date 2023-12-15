@@ -15,7 +15,12 @@ class ProcessBot::ClientSocket
     client.close
   end
 
+  def logger
+    @logger ||= ProcessBot::Logger.new(options: options)
+  end
+
   def send_command(data)
+    logger.log "Sending: #{data}"
     client.puts(JSON.generate(data))
     response_raw = client.gets
 

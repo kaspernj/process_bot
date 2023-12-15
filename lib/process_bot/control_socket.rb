@@ -50,7 +50,7 @@ class ProcessBot::ControlSocket
       if command_type == "graceful" || command_type == "stop"
         begin
           command_options = if command["options"]
-            command.fetch("options").symbolize_keys
+            symbolize_keys(command.fetch("options"))
           else
             {}
           end
@@ -60,6 +60,9 @@ class ProcessBot::ControlSocket
           process.__send__(command_type, **command_options)
           client.puts(JSON.generate(type: "success"))
         rescue => e # rubocop:disable Style/RescueStandardError
+          logger.log e.message, type: :stderr
+          logger.log e.backtrace, type: :stderr
+
           client.puts(JSON.generate(type: "error", message: e.message))
 
           raise e
@@ -68,5 +71,16 @@ class ProcessBot::ControlSocket
         client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}"))
       end
     end
+  end
+
+  def symbolize_keys(hash)
+    new_hash = {}
+    hash.each do |key, value|
+      next if key == "port"
+
+      new_hash[key.to_sym] = value
+    end
+
+    new_hash
   end
 end

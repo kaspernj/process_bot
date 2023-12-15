@@ -1,4 +1,5 @@
 require "json"
+require "string-cases"
 
 class ProcessBot::Process
   autoload :Handlers, "#{__dir__}/process/handlers"
@@ -39,6 +40,10 @@ class ProcessBot::Process
     end
   end
 
+  def handler_instance
+    @handler_instance ||= handler_class.new(self)
+  end
+
   def handler_name
     @handler_name ||= options.fetch(:handler)
   end
@@ -77,95 +82,22 @@ class ProcessBot::Process
     end
   end
 
-  def daemonize
-    logger.log "DAEMONIZE!"
-
-    pid = fork do
-      Process.daemon
-      yield
-    end
-
-    Process.detach(pid) if pid
-  end
-
-  def graceful(wait_for_gracefully_stopped: "true")
-    @stopped = true
-
-    unless current_pid
-      warn "#{handler_name} not running with a PID"
-      return
-    end
-
-    Process.kill("TSTP", current_pid)
-
-    if wait_for_gracefully_stopped == "false"
-      logger.log "Dont wait for gracefully stopped!"
-
-      daemonize do
-        wait_for_no_jobs_and_stop_sidekiq
-        exit
-      end
-    else
-      logger.log "WAIT FOR GRACEFULLY STOPPED!"
-
-      wait_for_no_jobs_and_stop_sidekiq
-    end
-  end
-
-  def stop
-    @stopped = true
-
-    unless current_pid
-      warn "#{handler_name} not running with a PID"
-      return
-    end
-
-    Process.kill("TERM", current_pid)
+  def graceful(wait_for_gracefully_stopped: true)
+    handler_instance.graceful(wait_for_gracefully_stopped: wait_for_gracefully_stopped)
   end
 
   def run
-    handler_instance = handler_class.new(options)
     runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
     runner.run
+  end
+
+  def stop
+    handler_instance.stop
   end
 
   def update_process_title
     process_args = {application: options[:application], handler: handler_name, id: options[:id], pid: current_pid, port: port}
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
-  end
-
-  def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
-    loop do
-      found_process = false
-
-      Knj::Unix_proc.list("grep" => current_pid) do |process|
-        process_command = process.data.fetch("cmd")
-        process_pid = process.data.fetch("pid").to_i
-        next unless process_pid == current_pid
-
-        found_process = true
-        sidekiq_regex = /\Asidekiq (\d+).(\d+).(\d+) (#{options.possible_process_titles_joined_regex}) \[(\d+) of (\d+)(\]|) (.+?)(\]|)\Z/
-        match = process_command.match(sidekiq_regex)
-        raise "Couldnt match Sidekiq command: #{process_command} with Sidekiq regex: #{sidekiq_regex}" unless match
-
-        running_jobs = match[5].to_i
-
-        logger.log "running_jobs: #{running_jobs}"
-
-        return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
-      end
-
-      raise "Couldn't find running process with PID #{current_pid}" unless found_process
-
-      sleep 1
-    end
-  end
-
-  def wait_for_no_jobs_and_stop_sidekiq
-    logger.log "Wait for no jobs and Stop sidekiq"
-
-    wait_for_no_jobs
-    stop
   end
 end
