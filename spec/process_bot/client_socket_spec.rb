@@ -67,7 +67,7 @@ describe ProcessBot::ClientSocket do
     control_socket.start
 
     begin
-      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: 7086))
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(command: "graceful", port: 7086))
 
       begin
         client_socket.send_command(command: "graceful")
