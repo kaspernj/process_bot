@@ -24,7 +24,7 @@ class ProcessBot::ControlSocket
     tries ||= 0
     tries += 1
     @server = TCPServer.new("localhost", @port)
-  rescue Errno::EADDRINUSE => e
+  rescue Errno::EADDRNOTAVAIL => e
     if tries <= 100
       @port += 1
       retry
