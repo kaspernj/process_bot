@@ -13,7 +13,7 @@ GEM
     diff-lcs (1.5.1)
     http2 (0.0.36)
       string-cases (~> 0)
-    json (2.7.4)
+    json (2.8.2)
     knjrbfw (0.0.116)
       datet
       http2
@@ -24,7 +24,7 @@ GEM
     language_server-protocol (3.17.0.3)
     method_source (1.1.0)
     parallel (1.26.3)
-    parser (3.3.5.0)
+    parser (3.3.6.0)
       ast (~> 2.4.1)
       racc
     php4r (0.0.4)
@@ -61,9 +61,9 @@ GEM
       rubocop-ast (>= 1.32.2, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 2.4.0, < 3.0)
-    rubocop-ast (1.32.3)
+    rubocop-ast (1.36.1)
       parser (>= 3.3.1.0)
-    rubocop-performance (1.22.1)
+    rubocop-performance (1.23.0)
       rubocop (>= 1.48.1, < 2.0)
       rubocop-ast (>= 1.31.1, < 2.0)
     rubocop-rake (0.6.0)
