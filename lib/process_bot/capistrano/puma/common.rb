@@ -54,7 +54,7 @@ module ProcessBot::Capistrano::Puma::Common
       kind == :ssl
     end
 
-    def tcp
+    def tcp # rubocop:disable Naming/PredicateMethod
       kind == :tcp || ssl?
     end
 
