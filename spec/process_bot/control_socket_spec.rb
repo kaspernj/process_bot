@@ -7,6 +7,8 @@ describe ProcessBot::ControlSocket do
     control_socket1 = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 6086), process: process1)
     control_socket1.start
 
+    sleep 0.1 # Wait a bit before starting the second process
+
     options2 = ProcessBot::Options.new(handler: "sidekiq")
     process2 = ProcessBot::Process.new(options2)
     control_socket2 = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 6086), process: process2)
