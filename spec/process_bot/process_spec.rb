@@ -52,18 +52,18 @@ describe ProcessBot::Process do
   describe "#wait_for_no_jobs_and_stop_sidekiq" do
     it "waits for Sidekiq to have no running jobs and then terminates it" do
       fake_process_output1 = [
-        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [4 of 25 stopping]",
-        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [3 of 25 stopping]"
+        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [4 of 25 stopping]",
+        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [3 of 25 stopping]"
       ]
       fake_process_output2 = [
-        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25 busy]",
-        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25 busy]"
+        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [0 of 25 busy]",
+        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [0 of 25 busy]"
       ]
 
       options = ProcessBot::Options.new(
-        application: "gratisbyggetilbud_rails",
+        application: "sample_app_name",
         handler: "sidekiq",
-        release_path: "/home/dev/peak-flow-production/releases/20221107164955"
+        release_path: "/home/dev/sample_app_name/releases/20221107164955"
       )
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
@@ -78,18 +78,18 @@ describe ProcessBot::Process do
 
     it "waits for Sidekiq to have no running jobs and then terminates it (new syntax)" do
       fake_process_output1 = [
-        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [4 of 25] stopping",
-        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [3 of 25] stopping"
+        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [4 of 25] stopping",
+        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [3 of 25] stopping"
       ]
       fake_process_output2 = [
-        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25] busy",
-        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 gratisbyggetilbud_rails [0 of 25] busy"
+        "dev       341824  0.5  0.2 2260076 367156 pts/19 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [0 of 25] busy",
+        "dev       342132  0.4  0.2 2326540 356624 pts/20 Sl+  07:04   0:09 sidekiq 6.5.7 sample_app_name [0 of 25] busy"
       ]
 
       options = ProcessBot::Options.new(
-        application: "gratisbyggetilbud_rails",
+        application: "sample_app_name",
         handler: "sidekiq",
-        release_path: "/home/dev/peak-flow-production/releases/20221107164955"
+        release_path: "/home/dev/sample_app_name/releases/20221107164955"
       )
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
