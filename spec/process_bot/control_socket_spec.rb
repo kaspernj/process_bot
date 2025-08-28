@@ -7,11 +7,13 @@ describe ProcessBot::ControlSocket do
     control_socket1 = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 6086), process: process1)
     control_socket1.start
 
-    sleep 0.1 # Wait a bit before starting the second process
-
     options2 = ProcessBot::Options.new(handler: "sidekiq")
     process2 = ProcessBot::Process.new(options2)
     control_socket2 = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 6086), process: process2)
+
+    expect(control_socket2).to receive(:actually_start_tcp_server).with("localhost", 6086).and_raise(Errno::EADDRINUSE, "Already in use")
+    expect(control_socket2).to receive(:actually_start_tcp_server).with("localhost", 6087).and_call_original
+
     control_socket2.start
 
     expect(control_socket1).to have_attributes(port: 6086)

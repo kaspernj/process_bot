@@ -23,7 +23,7 @@ class ProcessBot::ControlSocket
   def start_tcp_server
     tries ||= 0
     tries += 1
-    @server = TCPServer.new("localhost", @port)
+    @server = actually_start_tcp_server("localhost", @port)
   rescue Errno::EADDRINUSE, Errno::EADDRNOTAVAIL => e
     if tries <= 100
       @port += 1
@@ -31,6 +31,10 @@ class ProcessBot::ControlSocket
     else
       raise e
     end
+  end
+
+  def actually_start_tcp_server(host, port)
+    TCPServer.new(host, port)
   end
 
   def stop
