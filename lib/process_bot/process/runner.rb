@@ -8,7 +8,6 @@ class ProcessBot::Process::Runner
     @logger = logger
     @monitor = Monitor.new
     @options = options
-    @output = []
   end
 
   def output(output:, type:)
