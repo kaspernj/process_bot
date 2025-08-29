@@ -48,13 +48,7 @@ class ProcessBot::Process::Handlers::Custom
   end
 
   def stop(**_args)
-    process.set_stopped
-
-    unless current_pid
-      warn "#{handler_name} not running with a PID"
-      return
-    end
-
-    Process.kill("TERM", current_pid)
+    puts "Stop related processes"
+    process.runner.stop_related_processes
   end
 end

@@ -31,11 +31,11 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency "knjrbfw", ">= 0.0.116"
-  spec.add_runtime_dependency "pry"
-  spec.add_runtime_dependency "rake"
-  spec.add_runtime_dependency "rspec"
-  spec.add_runtime_dependency "string-cases"
+  spec.add_dependency "knjrbfw", ">= 0.0.116"
+  spec.add_dependency "pry"
+  spec.add_dependency "rake"
+  spec.add_dependency "rspec"
+  spec.add_dependency "string-cases"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 end

@@ -20,7 +20,7 @@ class ProcessBot::ClientSocket
   end
 
   def send_command(data) # rubocop:disable Metrics/AbcSize
-    logger.log "Sending: #{data}"
+    logger.logs "Sending: #{data}"
     client.puts(JSON.generate(data))
     response_raw = client.gets
 

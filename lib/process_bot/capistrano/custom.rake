@@ -8,7 +8,7 @@ namespace :process_bot do
         process_bot_data,
         :stop,
         "--handler" => "custom",
-        "--name" => ENV.fetch("PROCESS_BOT_CUSTOM_ID"))
+        "--name" => ENV.fetch("PROCESS_BOT_CUSTOM_ID")
       )
     end
 

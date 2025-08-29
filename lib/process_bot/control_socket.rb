@@ -72,8 +72,8 @@ class ProcessBot::ControlSocket
           process.__send__(command_type, **command_options)
           client.puts(JSON.generate(type: "success"))
         rescue => e # rubocop:disable Style/RescueStandardError
-          logger.logs e.message, type: :stderr
-          logger.logs e.backtrace, type: :stderr
+          logger.error e.message
+          logger.error e.backtrace
 
           client.puts(JSON.generate(type: "error", message: e.message, backtrace: e.backtrace))
 
