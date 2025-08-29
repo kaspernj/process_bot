@@ -29,7 +29,11 @@ class ProcessBot::Process
     if command == "start"
       start
     elsif command == "graceful" || command == "stop"
-      client.send_command(command: command, options: options.options)
+      begin
+        client.send_command(command: command, options: options.options)
+      rescue Errno::ECONNREFUSED => e
+        raise e unless options[:ignore_no_process_bot]
+      end
     else
       raise "Unknown command: #{command}"
     end
@@ -68,6 +72,10 @@ class ProcessBot::Process
     update_process_title
   end
 
+  def set_stopped
+    @stopped = true
+  end
+
   def start_control_socket
     @control_socket = ProcessBot::ControlSocket.new(options: options, process: self)
     @control_socket.start
@@ -88,13 +96,24 @@ class ProcessBot::Process
     end
   end
 
-  def set_stopped
+  def stop(**args)
+    puts "Stop process #{args}"
     @stopped = true
+    handler_instance.stop
   end
 
   def run
-    runner = ProcessBot::Process::Runner.new(command: handler_instance.start_command, logger: logger, options: options)
     runner.run
+  end
+
+  def runner
+    @runner ||= ProcessBot::Process::Runner.new(
+      command: handler_instance.start_command,
+      handler_name: handler_name,
+      handler_instance: handler_instance,
+      logger: logger,
+      options: options
+    )
   end
 
   def update_process_title

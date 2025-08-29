@@ -32,7 +32,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     end
   end
 
-  def process_bot_command(process_bot_data, command) # rubocop:disable Metrics/AbcSize
+  def process_bot_command(process_bot_data, command, args = {}) # rubocop:disable Metrics/AbcSize
     raise "No port in process bot data? #{process_bot_data}" unless process_bot_data["port"]
 
     mode = "exec"
@@ -54,6 +54,10 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
         "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
         "--command #{command} " \
         "--port #{process_bot_data.fetch("port")}"
+
+      args.each do |key, value|
+        backend_command << "#{key} #{value}"
+      end
 
       if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
         backend_command << " --wait-for-gracefully-stopped #{fetch(:process_bot_wait_for_gracefully_stopped)}"

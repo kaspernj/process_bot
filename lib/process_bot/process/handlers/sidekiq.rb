@@ -92,19 +92,26 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def stop(**_args)
-    process.set_stopped
+    if current_pid
+      Process.kill("TERM", current_pid)
+    else
+      related_sidekiq_processes = process.runner.related_sidekiq_processes
 
-    unless current_pid
-      warn "#{handler_name} not running with a PID"
-      return
+      if related_sidekiq_processes.empty?
+        logger.error "#{handler_name} didn't have any processes running"
+      else
+        related_sidekiq_processes.each do |related_sidekiq_process|
+          Process.kill("TERM", related_sidekiq_process.pid)
+        end
+      end
     end
-
-    Process.kill("TERM", current_pid)
   end
 
   def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
     loop do
       found_process = false
+
+      raise "No current PID for Sidekiq" unless current_pid
 
       Knj::Unix_proc.list("grep" => current_pid) do |process|
         process_command = process.data.fetch("cmd")

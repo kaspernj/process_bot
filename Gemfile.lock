@@ -3,6 +3,10 @@ PATH
   specs:
     process_bot (0.1.5)
       knjrbfw (>= 0.0.116)
+      pry
+      rake
+      rspec
+      string-cases
 
 GEM
   remote: https://rubygems.org/
@@ -98,14 +102,10 @@ PLATFORMS
 
 DEPENDENCIES
   process_bot!
-  pry
-  rake
-  rspec
   rubocop
   rubocop-performance
   rubocop-rake
   rubocop-rspec
-  string-cases
 
 BUNDLED WITH
    2.3.8

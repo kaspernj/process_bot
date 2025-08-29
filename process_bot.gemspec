@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     `git ls-files -z`.split("\x0").reject do |f|
-      (f == __FILE__) || f.match(%r{\A(?:(?:bin|test|spec|features)/|\.(?:git|travis|circleci)|appveyor)})
+      f.match(%r{\A(?:(?:bin|pkg|test|spec|features)/|\.(?:git|github|travis|circleci)|appveyor)})
     end
   end
   spec.bindir = "exe"
@@ -32,6 +32,10 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "knjrbfw", ">= 0.0.116"
+  spec.add_dependency "pry"
+  spec.add_dependency "rake"
+  spec.add_dependency "rspec"
+  spec.add_dependency "string-cases"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 end

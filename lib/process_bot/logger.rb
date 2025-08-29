@@ -5,6 +5,10 @@ class ProcessBot::Logger
     @options = options
   end
 
+  def error(output)
+    logs(output, type: :stderr)
+  end
+
   def log(output, type: :stdout)
     if type == :stdout || (type == :debug && options[:debug])
       $stdout.print output
