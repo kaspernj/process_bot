@@ -2,9 +2,10 @@
 
 require "pathname"
 
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", Pathname.new(__FILE__).realpath)
+# Is this necessary?
+# ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", Pathname.new(__FILE__).realpath)
+# require "bundler/setup"
 
-require "bundler/setup"
 require "optparse"
 require "string-cases"
 require_relative "../lib/process_bot"
