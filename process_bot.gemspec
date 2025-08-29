@@ -37,5 +37,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rspec"
   spec.add_dependency "string-cases"
 
+  spec.add_development_dependency "rubocop"
+  spec.add_development_dependency "rubocop-performance"
+  spec.add_development_dependency "rubocop-rake"
+  spec.add_development_dependency "rubocop-rspec"
+
   spec.metadata["rubygems_mfa_required"] = "true"
 end

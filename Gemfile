@@ -4,10 +4,3 @@ source "https://rubygems.org"
 
 # Specify your gem's dependencies in process_bot.gemspec
 gemspec
-
-group :development do
-  gem "rubocop"
-  gem "rubocop-performance"
-  gem "rubocop-rake"
-  gem "rubocop-rspec"
-end

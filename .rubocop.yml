@@ -9,6 +9,9 @@ plugins:
   - rubocop-rake
   - rubocop-rspec
 
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
 Layout/AccessModifierIndentation:
   EnforcedStyle: outdent
 
