@@ -17,7 +17,7 @@ GEM
     diff-lcs (1.6.2)
     http2 (0.0.36)
       string-cases (~> 0)
-    json (2.15.0)
+    json (2.15.1)
     knjrbfw (0.0.116)
       datet
       http2
@@ -36,7 +36,7 @@ GEM
       datet
       http2
       string-strtr
-    prism (1.5.1)
+    prism (1.6.0)
     pry (0.15.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -72,10 +72,10 @@ GEM
     rubocop-ast (1.47.1)
       parser (>= 3.3.7.2)
       prism (~> 1.4)
-    rubocop-performance (1.26.0)
+    rubocop-performance (1.26.1)
       lint_roller (~> 1.1)
       rubocop (>= 1.75.0, < 2.0)
-      rubocop-ast (>= 1.44.0, < 2.0)
+      rubocop-ast (>= 1.47.1, < 2.0)
     rubocop-rake (0.7.1)
       lint_roller (~> 1.1)
       rubocop (>= 1.72.1)
