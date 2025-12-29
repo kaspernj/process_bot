@@ -17,6 +17,7 @@ GEM
     diff-lcs (1.6.2)
     http2 (0.0.36)
       string-cases (~> 0)
+    io-console (0.8.2)
     json (2.18.0)
     knjrbfw (0.0.116)
       datet
@@ -37,14 +38,17 @@ GEM
       http2
       string-strtr
     prism (1.7.0)
-    pry (0.15.2)
+    pry (0.16.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
+      reline (>= 0.6.0)
     racc (1.8.1)
     rainbow (3.1.1)
     rake (13.3.1)
     ref (2.0.0)
     regexp_parser (2.11.3)
+    reline (0.6.3)
+      io-console (~> 0.5)
     rspec (3.13.2)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
