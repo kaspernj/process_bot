@@ -38,7 +38,8 @@ describe ProcessBot::Process::Handlers::Sidekiq do
       sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
 
       fake_runner = instance_double(ProcessBot::Process::Runner)
-      allow(fake_runner).to receive(:related_sidekiq_processes).and_return([double(pid: 222)])
+      fake_sidekiq_process = Struct.new(:pid).new(222)
+      allow(fake_runner).to receive(:related_sidekiq_processes).and_return([fake_sidekiq_process])
       allow(process).to receive(:runner).and_return(fake_runner)
 
       allow(Process).to receive(:getpgid).with(111).and_raise(Errno::ESRCH)

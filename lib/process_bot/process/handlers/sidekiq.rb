@@ -34,19 +34,29 @@ class ProcessBot::Process::Handlers::Sidekiq
     false
   end
 
-  def refresh_current_pid
-    return current_pid if process_running?(current_pid)
-
+  def related_sidekiq_pid
     related_sidekiq_processes = process.runner.related_sidekiq_processes
     if related_sidekiq_processes.empty?
       logger.logs "No related Sidekiq processes found while refreshing PID"
       return nil
     end
 
-    new_pid = related_sidekiq_processes.first.pid
+    related_sidekiq_processes.first.pid
+  end
+
+  def update_current_pid(new_pid)
     logger.logs "Refreshing Sidekiq PID from #{current_pid || 'nil'} to #{new_pid}"
     options.events.call(:on_process_started, pid: new_pid)
     new_pid
+  end
+
+  def refresh_current_pid
+    return current_pid if process_running?(current_pid)
+
+    new_pid = related_sidekiq_pid
+    return nil unless new_pid
+
+    update_current_pid(new_pid)
   end
 
   def fetch(*args, **opts)
@@ -65,6 +75,14 @@ class ProcessBot::Process::Handlers::Sidekiq
 
   def set(*args, **opts)
     options.set(*args, **opts)
+  end
+
+  def send_tstp_or_return
+    Process.kill("TSTP", current_pid)
+    true
+  rescue Errno::ESRCH
+    logger.logs "Sidekiq PID #{current_pid} disappeared before TSTP"
+    false
   end
 
   def start_command # rubocop:disable Metrics/AbcSize
@@ -105,12 +123,7 @@ class ProcessBot::Process::Handlers::Sidekiq
       return
     end
 
-    begin
-      Process.kill("TSTP", current_pid)
-    rescue Errno::ESRCH
-      logger.logs "Sidekiq PID #{current_pid} disappeared before TSTP"
-      return
-    end
+    return unless send_tstp_or_return
 
     if false_value?(wait_for_gracefully_stopped)
       logger.logs "Dont wait for gracefully stopped - doing that in fork..."
@@ -129,11 +142,7 @@ class ProcessBot::Process::Handlers::Sidekiq
     refresh_current_pid
 
     if current_pid
-      begin
-        Process.kill("TERM", current_pid)
-      rescue Errno::ESRCH
-        logger.logs "Sidekiq PID #{current_pid} is not running - nothing to stop"
-      end
+      Process.kill("TERM", current_pid)
     else
       related_sidekiq_processes = process.runner.related_sidekiq_processes
 
@@ -141,14 +150,12 @@ class ProcessBot::Process::Handlers::Sidekiq
         logger.error "#{handler_name} didn't have any processes running"
       else
         related_sidekiq_processes.each do |related_sidekiq_process|
-          begin
-            Process.kill("TERM", related_sidekiq_process.pid)
-          rescue Errno::ESRCH
-            logger.logs "Related Sidekiq PID #{related_sidekiq_process.pid} is not running"
-          end
+          Process.kill("TERM", related_sidekiq_process.pid)
         end
       end
     end
+  rescue Errno::ESRCH
+    logger.logs "Sidekiq PID #{current_pid} is not running - nothing to stop"
   end
 
   def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
