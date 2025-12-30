@@ -50,7 +50,8 @@ class ProcessBot::Process::Handlers::Sidekiq
     new_pid
   end
 
-  def refresh_current_pid
+  def refresh_current_pid(only_if_present: false)
+    return nil if only_if_present && !current_pid
     return current_pid if process_running?(current_pid)
 
     new_pid = related_sidekiq_pid
@@ -168,7 +169,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def stop(**_args)
-    refresh_current_pid
+    refresh_current_pid(only_if_present: true)
 
     if current_pid
       terminate_pid(current_pid)
