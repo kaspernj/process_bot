@@ -68,6 +68,7 @@ describe ProcessBot::Process do
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
 
+      allow(Process).to receive(:getpgid).with(342_132).and_return(123)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output1.join("\n"))
       expect(process.handler_instance).to receive(:sleep).with(1)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output2.join("\n"))
@@ -94,6 +95,7 @@ describe ProcessBot::Process do
       process = ProcessBot::Process.new(options)
       process.instance_variable_set(:@current_pid, 342_132)
 
+      allow(Process).to receive(:getpgid).with(342_132).and_return(123)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output1.join("\n"))
       expect(process.handler_instance).to receive(:sleep).with(1)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output2.join("\n"))
