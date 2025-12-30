@@ -51,4 +51,22 @@ describe ProcessBot::Process::Handlers::Sidekiq do
       expect(process.current_pid).to eq 222
     end
   end
+
+  describe "#stop" do
+    it "terminates all related processes when current PID is missing" do
+      options = ProcessBot::Options.new(handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
+
+      fake_runner = instance_double(ProcessBot::Process::Runner)
+      fake_processes = [Struct.new(:pid).new(111), Struct.new(:pid).new(222)]
+      allow(fake_runner).to receive(:related_sidekiq_processes).and_return(fake_processes)
+      allow(process).to receive(:runner).and_return(fake_runner)
+
+      expect(Process).to receive(:kill).with("TERM", 111)
+      expect(Process).to receive(:kill).with("TERM", 222)
+
+      sidekiq.stop
+    end
+  end
 end
