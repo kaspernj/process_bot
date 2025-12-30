@@ -29,4 +29,25 @@ describe ProcessBot::Process::Handlers::Sidekiq do
         "--queue queue3'"
     end
   end
+
+  describe "#graceful" do
+    it "refreshes current PID when it is no longer running" do
+      options = ProcessBot::Options.new(application: "sample_app", handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+      process.instance_variable_set(:@current_pid, 111)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
+
+      fake_runner = instance_double(ProcessBot::Process::Runner)
+      allow(fake_runner).to receive(:related_sidekiq_processes).and_return([double(pid: 222)])
+      allow(process).to receive(:runner).and_return(fake_runner)
+
+      allow(Process).to receive(:getpgid).with(111).and_raise(Errno::ESRCH)
+      expect(Process).to receive(:kill).with("TSTP", 222)
+      allow(sidekiq).to receive(:wait_for_no_jobs_and_stop_sidekiq)
+
+      sidekiq.graceful
+
+      expect(process.current_pid).to eq 222
+    end
+  end
 end

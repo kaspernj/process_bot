@@ -25,6 +25,30 @@ class ProcessBot::Process::Handlers::Sidekiq
     !value || value == "false"
   end
 
+  def process_running?(pid)
+    return false unless pid
+
+    Process.getpgid(pid)
+    true
+  rescue Errno::ESRCH
+    false
+  end
+
+  def refresh_current_pid
+    return current_pid if process_running?(current_pid)
+
+    related_sidekiq_processes = process.runner.related_sidekiq_processes
+    if related_sidekiq_processes.empty?
+      logger.logs "No related Sidekiq processes found while refreshing PID"
+      return nil
+    end
+
+    new_pid = related_sidekiq_processes.first.pid
+    logger.logs "Refreshing Sidekiq PID from #{current_pid || 'nil'} to #{new_pid}"
+    options.events.call(:on_process_started, pid: new_pid)
+    new_pid
+  end
+
   def fetch(*args, **opts)
     options.fetch(*args, **opts)
   end
@@ -76,7 +100,17 @@ class ProcessBot::Process::Handlers::Sidekiq
       return
     end
 
-    Process.kill("TSTP", current_pid)
+    unless refresh_current_pid
+      logger.logs "Sidekiq PID not running and no replacement found - nothing to stop"
+      return
+    end
+
+    begin
+      Process.kill("TSTP", current_pid)
+    rescue Errno::ESRCH
+      logger.logs "Sidekiq PID #{current_pid} disappeared before TSTP"
+      return
+    end
 
     if false_value?(wait_for_gracefully_stopped)
       logger.logs "Dont wait for gracefully stopped - doing that in fork..."
@@ -92,8 +126,14 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def stop(**_args)
+    refresh_current_pid
+
     if current_pid
-      Process.kill("TERM", current_pid)
+      begin
+        Process.kill("TERM", current_pid)
+      rescue Errno::ESRCH
+        logger.logs "Sidekiq PID #{current_pid} is not running - nothing to stop"
+      end
     else
       related_sidekiq_processes = process.runner.related_sidekiq_processes
 
@@ -101,7 +141,11 @@ class ProcessBot::Process::Handlers::Sidekiq
         logger.error "#{handler_name} didn't have any processes running"
       else
         related_sidekiq_processes.each do |related_sidekiq_process|
-          Process.kill("TERM", related_sidekiq_process.pid)
+          begin
+            Process.kill("TERM", related_sidekiq_process.pid)
+          rescue Errno::ESRCH
+            logger.logs "Related Sidekiq PID #{related_sidekiq_process.pid} is not running"
+          end
         end
       end
     end
@@ -111,7 +155,10 @@ class ProcessBot::Process::Handlers::Sidekiq
     loop do
       found_process = false
 
-      raise "No current PID for Sidekiq" unless current_pid
+      unless refresh_current_pid
+        logger.logs "Sidekiq PID not running while waiting for jobs"
+        return
+      end
 
       Knj::Unix_proc.list("grep" => current_pid) do |process|
         process_command = process.data.fetch("cmd")
@@ -130,7 +177,10 @@ class ProcessBot::Process::Handlers::Sidekiq
         return if running_jobs.zero? # rubocop:disable Lint/NonLocalExitFromIterator
       end
 
-      raise "Couldn't find running process with PID #{current_pid}" unless found_process
+      unless found_process
+        logger.logs "Couldn't find running process with PID #{current_pid}"
+        return
+      end
 
       sleep 1
     end
