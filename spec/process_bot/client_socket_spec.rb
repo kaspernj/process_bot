@@ -119,4 +119,23 @@ describe ProcessBot::ClientSocket do
 
     expect(process).to have_attributes(stopped: true)
   end
+
+  it "returns nil when the socket is reset while waiting for a response" do
+    fake_client = instance_double(TCPSocket)
+    allow(fake_client).to receive(:puts).and_return(true)
+    allow(fake_client).to receive(:gets).and_raise(Errno::ECONNRESET)
+    allow(fake_client).to receive(:close)
+
+    allow_any_instance_of(ProcessBot::ClientSocket).to receive(:client).and_return(fake_client)
+
+    client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: 7050))
+
+    begin
+      result = client_socket.send_command(command: "graceful")
+    ensure
+      client_socket.close
+    end
+
+    expect(result).to eq :nil
+  end
 end

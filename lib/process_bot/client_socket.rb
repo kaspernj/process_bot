@@ -21,8 +21,12 @@ class ProcessBot::ClientSocket
 
   def send_command(data) # rubocop:disable Metrics/AbcSize
     logger.logs "Sending: #{data}"
-    client.puts(JSON.generate(data))
-    response_raw = client.gets
+    begin
+      client.puts(JSON.generate(data))
+      response_raw = client.gets
+    rescue Errno::ECONNRESET, Errno::EPIPE
+      return :nil
+    end
 
     # Happens if process is interrupted
     return :nil if response_raw.nil?
