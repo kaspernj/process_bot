@@ -6,6 +6,7 @@ describe ProcessBot::ClientSocket do
     process = ProcessBot::Process.new(options)
     process.instance_variable_set(:@current_pid, 1234)
 
+    allow(Process).to receive(:getpgid).with(1234).and_return(999)
     expect(process).to receive(:stop).and_call_original
     expect(Process).to receive(:kill).with("TERM", 1234)
 
@@ -59,6 +60,7 @@ describe ProcessBot::ClientSocket do
     process = ProcessBot::Process.new(options)
     process.instance_variable_set(:@current_pid, 1234)
 
+    allow(Process).to receive(:getpgid).with(1234).and_return(999)
     expect(process).to receive(:graceful).and_call_original
     expect(process.handler_instance).to receive(:graceful).and_call_original
     expect(Process).to receive(:kill).with("TSTP", 1234)
@@ -89,6 +91,7 @@ describe ProcessBot::ClientSocket do
     process = ProcessBot::Process.new(options)
     process.instance_variable_set(:@current_pid, 1234)
 
+    allow(Process).to receive(:getpgid).with(1234).and_return(999)
     expect(process).to receive(:graceful).with(wait_for_gracefully_stopped: false).and_call_original
     expect(process.handler_instance).to receive(:graceful).with(wait_for_gracefully_stopped: false).and_call_original
     expect(Process).to receive(:kill).with("TSTP", 1234)

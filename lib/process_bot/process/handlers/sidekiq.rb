@@ -85,6 +85,53 @@ class ProcessBot::Process::Handlers::Sidekiq
     false
   end
 
+  def ensure_current_pid?
+    unless current_pid
+      warn "Sidekiq not running with a PID"
+      return false
+    end
+
+    unless refresh_current_pid
+      logger.logs "Sidekiq PID not running and no replacement found - nothing to stop"
+      return false
+    end
+
+    true
+  end
+
+  def terminate_pid(pid)
+    Process.kill("TERM", pid)
+  rescue Errno::ESRCH
+    logger.logs "Sidekiq PID #{pid} is not running - nothing to stop"
+  end
+
+  def terminate_related_sidekiq_processes
+    related_sidekiq_processes = process.runner.related_sidekiq_processes
+
+    if related_sidekiq_processes.empty?
+      logger.error "#{handler_name} didn't have any processes running"
+      return
+    end
+
+    related_sidekiq_processes.each do |related_sidekiq_process|
+      terminate_pid(related_sidekiq_process.pid)
+    end
+  end
+
+  def handle_graceful_wait(wait_for_gracefully_stopped)
+    if false_value?(wait_for_gracefully_stopped)
+      logger.logs "Dont wait for gracefully stopped - doing that in fork..."
+
+      daemonize do
+        wait_for_no_jobs_and_stop_sidekiq
+        exit
+      end
+    else
+      logger.logs "Wait for gracefully stopped..."
+      wait_for_no_jobs_and_stop_sidekiq
+    end
+  end
+
   def start_command # rubocop:disable Metrics/AbcSize
     args = []
 
@@ -113,49 +160,21 @@ class ProcessBot::Process::Handlers::Sidekiq
     wait_for_gracefully_stopped = args.fetch(:wait_for_gracefully_stopped, true)
     process.set_stopped
 
-    unless current_pid
-      warn "Sidekiq not running with a PID"
-      return
-    end
-
-    unless refresh_current_pid
-      logger.logs "Sidekiq PID not running and no replacement found - nothing to stop"
-      return
-    end
+    return unless ensure_current_pid?
 
     return unless send_tstp_or_return
 
-    if false_value?(wait_for_gracefully_stopped)
-      logger.logs "Dont wait for gracefully stopped - doing that in fork..."
-
-      daemonize do
-        wait_for_no_jobs_and_stop_sidekiq
-        exit
-      end
-    else
-      logger.logs "Wait for gracefully stopped..."
-      wait_for_no_jobs_and_stop_sidekiq
-    end
+    handle_graceful_wait(wait_for_gracefully_stopped)
   end
 
   def stop(**_args)
     refresh_current_pid
 
     if current_pid
-      Process.kill("TERM", current_pid)
+      terminate_pid(current_pid)
     else
-      related_sidekiq_processes = process.runner.related_sidekiq_processes
-
-      if related_sidekiq_processes.empty?
-        logger.error "#{handler_name} didn't have any processes running"
-      else
-        related_sidekiq_processes.each do |related_sidekiq_process|
-          Process.kill("TERM", related_sidekiq_process.pid)
-        end
-      end
+      terminate_related_sidekiq_processes
     end
-  rescue Errno::ESRCH
-    logger.logs "Sidekiq PID #{current_pid} is not running - nothing to stop"
   end
 
   def wait_for_no_jobs # rubocop:disable Metrics/AbcSize
