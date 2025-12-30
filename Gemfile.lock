@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    process_bot (0.1.8)
+    process_bot (0.1.10)
       knjrbfw (>= 0.0.116)
       pry
       rake
@@ -58,7 +58,7 @@ GEM
     rspec-expectations (3.13.5)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-mocks (3.13.6)
+    rspec-mocks (3.13.7)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.6)
