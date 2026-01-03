@@ -53,7 +53,10 @@ class ProcessBot::ClientSocket
   end
 
   def response_timeout
-    options.fetch(:response_timeout, connect_timeout).to_f
+    timeout = options[:response_timeout]
+    return nil if timeout.nil?
+
+    timeout.to_f
   end
 
   def read_response_with_timeout
@@ -63,7 +66,7 @@ class ProcessBot::ClientSocket
       client.to_io
     end
 
-    if response_timeout.positive? && io.is_a?(IO)
+    if response_timeout && response_timeout.positive? && io.is_a?(IO)
       ready = IO.select([io], nil, nil, response_timeout)
       return :timeout if ready.nil?
     end
