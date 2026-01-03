@@ -138,4 +138,27 @@ describe ProcessBot::ClientSocket do
 
     expect(result).to eq :nil
   end
+
+  it "sends a kill signal when the response times out" do
+    fake_client = instance_double(TCPSocket)
+    allow(fake_client).to receive(:puts).and_return(true)
+    allow(fake_client).to receive(:close)
+
+    allow_any_instance_of(ProcessBot::ClientSocket).to receive(:client).and_return(fake_client)
+    allow(IO).to receive(:select).with([fake_client], nil, nil, 0.1).and_return(nil)
+
+    expect(Process).to receive(:kill).with("KILL", 4321)
+
+    client_socket = ProcessBot::ClientSocket.new(
+      options: ProcessBot::Options.new(port: 7050, process_bot_pid: 4321, response_timeout: 0.1)
+    )
+
+    begin
+      result = client_socket.send_command(command: "graceful")
+    ensure
+      client_socket.close
+    end
+
+    expect(result).to eq :nil
+  end
 end
