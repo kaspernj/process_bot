@@ -143,9 +143,11 @@ describe ProcessBot::ClientSocket do
     fake_client = instance_double(TCPSocket)
     allow(fake_client).to receive(:puts).and_return(true)
     allow(fake_client).to receive(:close)
+    read_io, write_io = IO.pipe
+    allow(fake_client).to receive(:to_io).and_return(read_io)
 
     allow_any_instance_of(ProcessBot::ClientSocket).to receive(:client).and_return(fake_client)
-    allow(IO).to receive(:select).with([fake_client], nil, nil, 0.1).and_return(nil)
+    allow(IO).to receive(:select).with([read_io], nil, nil, 0.1).and_return(nil)
 
     expect(Process).to receive(:kill).with("KILL", 4321)
 
@@ -157,6 +159,8 @@ describe ProcessBot::ClientSocket do
       result = client_socket.send_command(command: "graceful")
     ensure
       client_socket.close
+      read_io.close unless read_io.closed?
+      write_io.close unless write_io.closed?
     end
 
     expect(result).to eq :nil

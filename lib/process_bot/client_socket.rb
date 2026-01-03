@@ -57,8 +57,14 @@ class ProcessBot::ClientSocket
   end
 
   def read_response_with_timeout
-    if response_timeout.positive?
-      ready = IO.select([client], nil, nil, response_timeout)
+    io = if client.is_a?(IO)
+      client
+    elsif client.respond_to?(:to_io)
+      client.to_io
+    end
+
+    if response_timeout.positive? && io.is_a?(IO)
+      ready = IO.select([io], nil, nil, response_timeout)
       return :timeout if ready.nil?
     end
 
