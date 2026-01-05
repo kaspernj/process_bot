@@ -1,6 +1,10 @@
 require "spec_helper"
 
 describe ProcessBot::ClientSocket do
+  before do
+    allow_any_instance_of(ProcessBot::ControlSocket).to receive(:used_process_bot_ports).and_return([])
+  end
+
   it "sends a stop command to the server" do
     options = ProcessBot::Options.new(handler: "sidekiq")
     process = ProcessBot::Process.new(options)
