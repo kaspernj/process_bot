@@ -8,7 +8,10 @@ class ProcessBot::ClientSocket
   end
 
   def client
-    @client ||= Socket.tcp("localhost", options.fetch(:port).to_i, connect_timeout: 2)
+    return @client if @client
+
+    logger.logs "Connecting to process on port #{options.fetch(:port)}"
+    @client = Socket.tcp("localhost", options.fetch(:port).to_i, connect_timeout: 2)
   end
 
   def close

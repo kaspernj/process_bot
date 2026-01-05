@@ -27,13 +27,12 @@ class ProcessBot::Process
     command = options.fetch(:command)
 
     if command == "start"
+      logger.logs "Starting process"
       start
     elsif command == "graceful" || command == "stop"
-      begin
-        client.send_command(command: command, options: options.options)
-      rescue Errno::ECONNREFUSED => e
-        raise e unless options[:ignore_no_process_bot]
-      end
+      send_control_command(command)
+    elsif command == "graceful_no_wait"
+      send_control_command(command, wait_for_gracefully_stopped: false)
     else
       raise "Unknown command: #{command}"
     end
@@ -97,13 +96,20 @@ class ProcessBot::Process
   end
 
   def stop(**args)
-    puts "Stop process #{args}"
+    logger.logs "Stop process #{args}"
     @stopped = true
     handler_instance.stop
   end
 
   def run
     runner.run
+  end
+
+  def send_control_command(command, **command_options)
+    logger.logs "Sending #{command} command"
+    client.send_command(command: command, options: options.options.merge(command_options))
+  rescue Errno::ECONNREFUSED => e
+    raise e unless options[:ignore_no_process_bot]
   end
 
   def runner

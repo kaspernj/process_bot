@@ -7,7 +7,7 @@ class ProcessBot::Process::Runner
     @command = command
     @handler_instance = handler_instance
     @handler_name = handler_name
-    @logger = logger
+    @logger = logger || ProcessBot::Logger.new(options: options)
     @monitor = Monitor.new
     @options = options
   end
@@ -119,7 +119,7 @@ class ProcessBot::Process::Runner
         break
       else
         processes.each do |process|
-          logger.logs "Terminating PID #{process.pid}: #{process.data.fetch("cmd")}"
+          logger.logs "Killing process with signal TERM for PID #{process.pid}: #{process.data.fetch("cmd")}"
           Process.kill("TERM", process.pid)
         end
 
@@ -130,20 +130,28 @@ class ProcessBot::Process::Runner
 
   def find_sidekiq_pid
     Thread.new do
-      while running? && !pid
-        related_sidekiq_processes.each do |related_sidekiq_process| # rubocop:disable Lint/UnreachableLoop
-          puts "FOUND PID: #{related_sidekiq_process.pid}"
-          @pid = related_sidekiq_process.pid
-          options.events.call(:on_process_started, pid: related_sidekiq_process.pid)
+      wait_for_sidekiq_pid
+    end
+  end
 
-          break
-        end
+  def wait_for_sidekiq_pid
+    while running? && !pid
+      assign_related_sidekiq_pid
 
-        unless pid
-          puts "Waiting 1 second before trying to find Sidekiq PID again"
-          sleep 1
-        end
+      unless pid
+        logger.logs "Waiting 1 second before trying to find Sidekiq PID again"
+        sleep 1
       end
+    end
+  end
+
+  def assign_related_sidekiq_pid
+    related_sidekiq_processes.each do |related_sidekiq_process| # rubocop:disable Lint/UnreachableLoop
+      logger.logs "Found PID: #{related_sidekiq_process.pid}"
+      @pid = related_sidekiq_process.pid
+      options.events.call(:on_process_started, pid: related_sidekiq_process.pid)
+
+      break
     end
   end
 end
