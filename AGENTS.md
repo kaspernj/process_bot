@@ -12,3 +12,4 @@
 - Always run RuboCop against changed or created Ruby files.
 - Added `graceful_no_wait` command and Capistrano task for non-blocking graceful shutdowns.
 - Always add or update tests for new/changed functionality, and run them.
+- Added coverage for graceful_no_wait and Capistrano wait defaults.
