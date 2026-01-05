@@ -10,22 +10,28 @@ class ProcessBot::Logger
   end
 
   def log(output, type: :stdout)
-    if type == :stdout || (type == :debug && options[:debug])
+    case type
+    when :stdout
       $stdout.print output
-    elsif type == :stderr
+    when :stderr
       $stderr.print output
+    when :info
+      $stdout.print output if logging_enabled?
+    when :debug
+      $stdout.print output if debug_enabled?
     else
       raise "Unknown type: #{type}"
     end
 
     return unless log_to_file?
+    return if type == :debug && !debug_enabled?
 
     fp_log.write(output)
     fp_log.flush
   end
 
-  def logs(output, **args)
-    log("#{output}\n", **args)
+  def logs(output, type: :info, **args)
+    log("#{output}\n", type: type, **args)
   end
 
   def log_file_path
@@ -38,5 +44,24 @@ class ProcessBot::Logger
 
   def fp_log
     @fp_log ||= File.open(log_file_path, "a") if log_to_file?
+  end
+
+  def debug_enabled?
+    truthy_option?(:debug)
+  end
+
+  def logging_enabled?
+    truthy_option?(:log) || truthy_option?(:logging) || debug_enabled?
+  end
+
+  def truthy_option?(key)
+    value = options[key]
+    return false if value.nil?
+    return value if value == true || value == false
+
+    normalized = value.to_s.strip.downcase
+    return false if normalized == "false" || normalized == "0" || normalized == ""
+
+    true
   end
 end

@@ -27,9 +27,11 @@ class ProcessBot::Process
     command = options.fetch(:command)
 
     if command == "start"
+      logger.logs "Starting process"
       start
     elsif command == "graceful" || command == "stop"
       begin
+        logger.logs "Sending #{command} command"
         client.send_command(command: command, options: options.options)
       rescue Errno::ECONNREFUSED => e
         raise e unless options[:ignore_no_process_bot]
@@ -97,7 +99,7 @@ class ProcessBot::Process
   end
 
   def stop(**args)
-    puts "Stop process #{args}"
+    logger.logs "Stop process #{args}"
     @stopped = true
     handler_instance.stop
   end
