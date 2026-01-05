@@ -52,6 +52,19 @@ describe ProcessBot::Process::Handlers::Sidekiq do
     end
   end
 
+  describe "#graceful_no_wait" do
+    it "daemonizes the graceful wait" do
+      options = ProcessBot::Options.new(application: "sample_app", handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
+
+      allow(sidekiq).to receive_messages(ensure_current_pid?: true, send_tstp_or_return: true)
+      expect(sidekiq).to receive(:daemonize)
+
+      sidekiq.graceful_no_wait
+    end
+  end
+
   describe "#stop" do
     it "terminates all related processes when current PID is missing" do
       options = ProcessBot::Options.new(handler: "sidekiq")

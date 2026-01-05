@@ -90,48 +90,14 @@ describe ProcessBot::ClientSocket do
     expect(process).to have_attributes(stopped: true)
   end
 
-  it "sends a graceful stop command to the server with 'wait_for_gracefully_stopped'" do
-    options = ProcessBot::Options.new(handler: "sidekiq")
-    process = ProcessBot::Process.new(options)
-    process.instance_variable_set(:@current_pid, 1234)
-
-    allow(Process).to receive(:getpgid).with(1234).and_return(999)
-    expect(process).to receive(:graceful).with(wait_for_gracefully_stopped: false).and_call_original
-    expect(process.handler_instance).to receive(:graceful).with(wait_for_gracefully_stopped: false).and_call_original
-    expect(Process).to receive(:kill).with("TSTP", 1234)
-    expect(Process).to receive(:fork).and_return(4321)
-    expect(Process).to receive(:detach).with(4321)
-    expect(process.handler_instance).not_to receive(:wait_for_no_jobs_and_stop_sidekiq)
-    expect(process.handler_instance).not_to receive(:wait_for_no_jobs)
-    expect(process.handler_instance).not_to receive(:stop)
-
-    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
-    control_socket.start
-
-    client_socket_options = ProcessBot::Options.new(port: control_socket.port, wait_for_gracefully_stopped: false)
-    client_socket = ProcessBot::ClientSocket.new(options: client_socket_options)
-
-    begin
-      begin
-        client_socket.send_command(command: "graceful", options: client_socket_options.options)
-      ensure
-        client_socket.close
-      end
-    ensure
-      control_socket.stop
-    end
-
-    expect(process).to have_attributes(stopped: true)
-  end
-
   it "sends a graceful_no_wait command to the server" do
     options = ProcessBot::Options.new(handler: "sidekiq")
     process = ProcessBot::Process.new(options)
     process.instance_variable_set(:@current_pid, 1234)
 
     allow(Process).to receive(:getpgid).with(1234).and_return(999)
-    expect(process).to receive(:graceful).with(wait_for_gracefully_stopped: false).and_call_original
-    expect(process.handler_instance).to receive(:graceful).with(wait_for_gracefully_stopped: false).and_call_original
+    expect(process).to receive(:graceful_no_wait).and_call_original
+    expect(process.handler_instance).to receive(:graceful_no_wait).and_call_original
     expect(Process).to receive(:kill).with("TSTP", 1234)
     expect(Process).to receive(:fork).and_return(4321)
     expect(Process).to receive(:detach).with(4321)
