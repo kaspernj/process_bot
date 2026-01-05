@@ -9,3 +9,4 @@
 - Made graceful shutdown waiting optional and defaulted Capistrano to not wait.
 - Kept graceful handling synchronous and verified `bundle exec rspec`.
 - Enabled ProcessBot logging by default for Capistrano hooks (configurable via `process_bot_log`).
+- Always run RuboCop against changed or created Ruby files.
