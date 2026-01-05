@@ -6,6 +6,7 @@ class ProcessBot::Process
   extend Forwardable
 
   def_delegator :handler_instance, :graceful
+  def_delegator :handler_instance, :graceful_no_wait
   def_delegator :handler_instance, :stop
 
   autoload :Handlers, "#{__dir__}/process/handlers"
@@ -29,10 +30,8 @@ class ProcessBot::Process
     if command == "start"
       logger.logs "Starting process"
       start
-    elsif command == "graceful" || command == "stop"
+    elsif command == "graceful" || command == "graceful_no_wait" || command == "stop"
       send_control_command(command)
-    elsif command == "graceful_no_wait"
-      send_control_command(command, wait_for_gracefully_stopped: false)
     else
       raise "Unknown command: #{command}"
     end
