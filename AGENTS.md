@@ -10,3 +10,4 @@
 - Kept graceful handling synchronous and verified `bundle exec rspec`.
 - Enabled ProcessBot logging by default for Capistrano hooks (configurable via `process_bot_log`).
 - Always run RuboCop against changed or created Ruby files.
+- Added `graceful_no_wait` command and Capistrano task for non-blocking graceful shutdowns.

@@ -37,6 +37,12 @@ Run commands in the command line like this:
 cap production process_bot:sidekiq:graceful
 ```
 
+You can also skip waiting for graceful completion:
+
+```bash
+cap production process_bot:sidekiq:graceful_no_wait
+```
+
 ### Logging
 
 ProcessBot can log its internal actions (connecting, sending commands, signals, etc.) to stdout.
@@ -45,6 +51,7 @@ Enable this with `--log true` (or `--logging true`):
 ```bash
 bundle exec process_bot --command start --log true
 bundle exec process_bot --command graceful --log true
+bundle exec process_bot --command graceful_no_wait --log true
 ```
 
 To write logs to a file, add `--log-file-path`:
@@ -62,6 +69,9 @@ To wait for completion, set:
 ```ruby
 set :process_bot_wait_for_gracefully_stopped, true
 ```
+
+If you want both behaviors, use `process_bot:sidekiq:graceful` (wait) and
+`process_bot:sidekiq:graceful_no_wait` (no wait).
 
 ### Capistrano logging
 
