@@ -69,8 +69,20 @@ class ProcessBot::ControlSocket
 
           logger.logs "Command #{command_type} with options #{command_options}"
 
-          process.__send__(command_type, **command_options)
-          client.puts(JSON.generate(type: "success"))
+          if command_type == "graceful" && !wait_for_gracefully_stopped?(command_options)
+            Thread.new do
+              begin
+                process.__send__(command_type, **command_options)
+              rescue => e # rubocop:disable Style/RescueStandardError
+                logger.error e.message
+                logger.error e.backtrace
+              end
+            end
+            client.puts(JSON.generate(type: "success"))
+          else
+            process.__send__(command_type, **command_options)
+            client.puts(JSON.generate(type: "success"))
+          end
         rescue => e # rubocop:disable Style/RescueStandardError
           logger.error e.message
           logger.error e.backtrace
@@ -94,5 +106,15 @@ class ProcessBot::ControlSocket
     end
 
     new_hash
+  end
+
+  def wait_for_gracefully_stopped?(command_options)
+    return true unless command_options.key?(:wait_for_gracefully_stopped)
+
+    value = command_options[:wait_for_gracefully_stopped]
+    normalized = value.to_s.strip.downcase
+    return false if value == false || normalized == "false" || normalized == "0"
+
+    true
   end
 end

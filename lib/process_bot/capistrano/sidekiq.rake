@@ -13,6 +13,7 @@ namespace :load do
     set :sidekiq_processes, 1
     set :sidekiq_options_per_process, nil
     set :sidekiq_user, nil
+    set :process_bot_wait_for_gracefully_stopped, false
     # Rbenv, Chruby, and RVM integration
     set :rbenv_map_bins, fetch(:rbenv_map_bins).to_a + ["sidekiq", "sidekiqctl"]
     set :rvm_map_bins, fetch(:rvm_map_bins).to_a + ["sidekiq", "sidekiqctl"]
