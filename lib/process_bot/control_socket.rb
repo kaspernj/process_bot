@@ -1,4 +1,6 @@
 require "socket"
+require "json"
+require "knjrbfw"
 
 class ProcessBot::ControlSocket
   attr_reader :options, :port, :process, :server
@@ -21,15 +23,25 @@ class ProcessBot::ControlSocket
   end
 
   def start_tcp_server
-    tries ||= 0
-    tries += 1
-    @server = actually_start_tcp_server("localhost", @port)
-  rescue Errno::EADDRINUSE, Errno::EADDRNOTAVAIL => e
-    if tries <= 100
-      @port += 1
-      retry
-    else
-      raise e
+    used_ports = used_process_bot_ports
+    attempts = 0
+
+    loop do
+      if used_ports.include?(@port)
+        @port += 1
+        next
+      end
+
+      attempts += 1
+      @server = actually_start_tcp_server("localhost", @port)
+      break
+    rescue Errno::EADDRINUSE, Errno::EADDRNOTAVAIL => e
+      if attempts <= 100
+        @port += 1
+        next
+      else
+        raise e
+      end
     end
   end
 
@@ -113,5 +125,26 @@ class ProcessBot::ControlSocket
     command_type = "graceful"
     command_options[:wait_for_gracefully_stopped] = false
     [command_type, command_options]
+  end
+
+  def used_process_bot_ports
+    ports = []
+
+    Knj::Unix_proc.list("grep" => "ProcessBot") do |process|
+      process_command = process.data.fetch("cmd")
+      match = process_command.match(/ProcessBot (\{.+\})/)
+      next unless match
+
+      begin
+        process_data = JSON.parse(match[1])
+      rescue JSON::ParserError
+        next
+      end
+
+      port = process_data["port"]
+      ports << port.to_i if port
+    end
+
+    ports.uniq
   end
 end
