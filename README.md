@@ -37,6 +37,22 @@ Run commands in the command line like this:
 cap production process_bot:sidekiq:graceful
 ```
 
+### Logging
+
+ProcessBot can log its internal actions (connecting, sending commands, signals, etc.) to stdout.
+Enable this with `--log true` (or `--logging true`):
+
+```bash
+bundle exec process_bot --command start --log true
+bundle exec process_bot --command graceful --log true
+```
+
+To write logs to a file, add `--log-file-path`:
+
+```bash
+bundle exec process_bot --command start --log true --log-file-path /var/log/process_bot.log
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
