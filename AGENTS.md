@@ -5,4 +5,4 @@
 - Added log lines for client connections, command sends, and signal handling.
 - Documented logging usage in `README.md`.
 - Branch: logging-toggle
-- PR: to be created with `gh pr create`
+- PR: https://github.com/kaspernj/process_bot/pull/164
