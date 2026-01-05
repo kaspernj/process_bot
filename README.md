@@ -71,16 +71,8 @@ bundle exec process_bot --command start --log true --log-file-path /var/log/proc
 
 ### Graceful shutdown waiting
 
-ProcessBot can wait for graceful shutdowns to finish, but this is optional.
-In Capistrano deploys the default is to continue immediately while Sidekiq finishes in the background.
-To wait for completion, set:
-
-```ruby
-set :process_bot_wait_for_gracefully_stopped, true
-```
-
-If you want both behaviors, use `process_bot:sidekiq:graceful` (wait) and
-`process_bot:sidekiq:graceful_no_wait` (no wait).
+Use `process_bot:sidekiq:graceful` to wait for running jobs, and
+`process_bot:sidekiq:graceful_no_wait` to return immediately while Sidekiq drains.
 
 ### Capistrano logging
 
