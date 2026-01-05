@@ -63,6 +63,15 @@ To wait for completion, set:
 set :process_bot_wait_for_gracefully_stopped, true
 ```
 
+### Capistrano logging
+
+ProcessBot logging is enabled by default in the Capistrano integration.
+You can override it with:
+
+```ruby
+set :process_bot_log, false
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
