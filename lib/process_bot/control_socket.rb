@@ -43,10 +43,16 @@ class ProcessBot::ControlSocket
 
   def run_client_loop
     Thread.new do
-      client = server.accept
+      loop do
+        begin
+          client = server.accept
+        rescue IOError, Errno::EBADF
+          break
+        end
 
-      Thread.new do
-        handle_client(client)
+        Thread.new do
+          handle_client(client)
+        end
       end
     end
   end
@@ -67,15 +73,7 @@ class ProcessBot::ControlSocket
             {}
           end
 
-          if command_type == "graceful_no_wait"
-            command_type = "graceful"
-            command_options[:wait_for_gracefully_stopped] = false
-          end
-
-          logger.logs "Command #{command_type} with options #{command_options}"
-
-          process.__send__(command_type, **command_options)
-          client.puts(JSON.generate(type: "success"))
+          run_command(command_type, command_options, client)
         rescue => e # rubocop:disable Style/RescueStandardError
           logger.error e.message
           logger.error e.backtrace
@@ -99,5 +97,40 @@ class ProcessBot::ControlSocket
     end
 
     new_hash
+  end
+
+  def run_command(command_type, command_options, client)
+    command_type, command_options = normalize_command(command_type, command_options)
+    logger.logs "Command #{command_type} with options #{command_options}"
+
+    if async_graceful?(command_type, command_options)
+      run_async_command(command_type, command_options)
+      client.puts(JSON.generate(type: "success"))
+      return
+    end
+
+    process.__send__(command_type, **command_options)
+    client.puts(JSON.generate(type: "success"))
+  end
+
+  def normalize_command(command_type, command_options)
+    return [command_type, command_options] unless command_type == "graceful_no_wait"
+
+    command_type = "graceful"
+    command_options[:wait_for_gracefully_stopped] = false
+    [command_type, command_options]
+  end
+
+  def async_graceful?(command_type, command_options)
+    command_type == "graceful" && command_options[:wait_for_gracefully_stopped] == false
+  end
+
+  def run_async_command(command_type, command_options)
+    Thread.new do
+      process.__send__(command_type, **command_options)
+    rescue => e # rubocop:disable Style/RescueStandardError
+      logger.error e.message
+      logger.error e.backtrace
+    end
   end
 end

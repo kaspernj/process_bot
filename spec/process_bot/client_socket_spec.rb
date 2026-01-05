@@ -171,4 +171,33 @@ describe ProcessBot::ClientSocket do
 
     expect(result).to eq :nil
   end
+
+  it "accepts multiple client connections" do
+    options = ProcessBot::Options.new(handler: "sidekiq")
+    process = ProcessBot::Process.new(options)
+    process.instance_variable_set(:@current_pid, 1234)
+
+    allow(Process).to receive(:getpgid).with(1234).and_return(999)
+    expect(process).to receive(:stop).twice.and_call_original
+    expect(Process).to receive(:kill).with("TERM", 1234).twice
+
+    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
+    control_socket.start
+
+    begin
+      2.times do
+        client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: control_socket.port))
+
+        begin
+          client_socket.send_command(command: "stop")
+        ensure
+          client_socket.close
+        end
+      end
+    ensure
+      control_socket.stop
+    end
+
+    expect(process).to have_attributes(stopped: true)
+  end
 end
