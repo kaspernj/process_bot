@@ -39,6 +39,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
 
     if mode == "runner"
       args = {command: command, port: process_bot_data.fetch("port")}
+      args["log"] = fetch(:process_bot_log) unless fetch(:process_bot_log).nil?
 
       if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
         args["wait_for_gracefully_stopped"] = fetch(:process_bot_wait_for_gracefully_stopped)
@@ -54,6 +55,8 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
         "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot " \
         "--command #{command} " \
         "--port #{process_bot_data.fetch("port")}"
+
+      backend_command << " --log #{fetch(:process_bot_log)}" unless fetch(:process_bot_log).nil?
 
       args.each do |key, value|
         backend_command << "#{key} #{value}"
