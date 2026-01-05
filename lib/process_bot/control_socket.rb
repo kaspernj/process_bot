@@ -103,12 +103,6 @@ class ProcessBot::ControlSocket
     command_type, command_options = normalize_command(command_type, command_options)
     logger.logs "Command #{command_type} with options #{command_options}"
 
-    if async_graceful?(command_type, command_options)
-      run_async_command(command_type, command_options)
-      client.puts(JSON.generate(type: "success"))
-      return
-    end
-
     process.__send__(command_type, **command_options)
     client.puts(JSON.generate(type: "success"))
   end
@@ -119,18 +113,5 @@ class ProcessBot::ControlSocket
     command_type = "graceful"
     command_options[:wait_for_gracefully_stopped] = false
     [command_type, command_options]
-  end
-
-  def async_graceful?(command_type, command_options)
-    command_type == "graceful" && command_options[:wait_for_gracefully_stopped] == false
-  end
-
-  def run_async_command(command_type, command_options)
-    Thread.new do
-      process.__send__(command_type, **command_options)
-    rescue => e # rubocop:disable Style/RescueStandardError
-      logger.error e.message
-      logger.error e.backtrace
-    end
   end
 end
