@@ -59,12 +59,17 @@ class ProcessBot::ControlSocket
       command = JSON.parse(data)
       command_type = command.fetch("command")
 
-      if command_type == "graceful" || command_type == "stop"
+      if command_type == "graceful" || command_type == "graceful_no_wait" || command_type == "stop"
         begin
           command_options = if command["options"]
             symbolize_keys(command.fetch("options"))
           else
             {}
+          end
+
+          if command_type == "graceful_no_wait"
+            command_type = "graceful"
+            command_options[:wait_for_gracefully_stopped] = false
           end
 
           logger.logs "Command #{command_type} with options #{command_options}"

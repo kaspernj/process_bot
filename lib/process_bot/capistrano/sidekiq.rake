@@ -37,6 +37,17 @@ namespace :process_bot do
       end
     end
 
+    desc "Stop Sidekiq and ProcessBot gracefully without waiting for completion"
+    task :graceful_no_wait do
+      on roles fetch(:sidekiq_roles) do |role|
+        git_plugin.switch_user(role) do
+          git_plugin.running_process_bot_processes.each do |process_bot_process|
+            git_plugin.process_bot_command(process_bot_process, :graceful_no_wait)
+          end
+        end
+      end
+    end
+
     desc "Stop Sidekiq and ProcessBot (graceful shutdown within timeout, put unfinished tasks back to Redis)"
     task :stop do
       on roles fetch(:sidekiq_roles) do |role|

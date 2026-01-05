@@ -31,6 +31,8 @@ class ProcessBot::Process
       start
     elsif command == "graceful" || command == "stop"
       send_control_command(command)
+    elsif command == "graceful_no_wait"
+      send_control_command(command, wait_for_gracefully_stopped: false)
     else
       raise "Unknown command: #{command}"
     end
@@ -103,9 +105,9 @@ class ProcessBot::Process
     runner.run
   end
 
-  def send_control_command(command)
+  def send_control_command(command, **command_options)
     logger.logs "Sending #{command} command"
-    client.send_command(command: command, options: options.options)
+    client.send_command(command: command, options: options.options.merge(command_options))
   rescue Errno::ECONNREFUSED => e
     raise e unless options[:ignore_no_process_bot]
   end
