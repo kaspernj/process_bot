@@ -53,6 +53,16 @@ To write logs to a file, add `--log-file-path`:
 bundle exec process_bot --command start --log true --log-file-path /var/log/process_bot.log
 ```
 
+### Graceful shutdown waiting
+
+ProcessBot can wait for graceful shutdowns to finish, but this is optional.
+In Capistrano deploys the default is to continue immediately while Sidekiq finishes in the background.
+To wait for completion, set:
+
+```ruby
+set :process_bot_wait_for_gracefully_stopped, true
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

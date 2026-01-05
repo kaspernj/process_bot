@@ -6,3 +6,4 @@
 - Documented logging usage in `README.md`.
 - Branch: logging-toggle
 - PR: https://github.com/kaspernj/process_bot/pull/164
+- Made graceful shutdown waiting optional and defaulted Capistrano to not wait.
