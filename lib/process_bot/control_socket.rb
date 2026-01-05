@@ -112,19 +112,10 @@ class ProcessBot::ControlSocket
   end
 
   def run_command(command_type, command_options, client)
-    command_type, command_options = normalize_command(command_type, command_options)
     logger.logs "Command #{command_type} with options #{command_options}"
 
     process.__send__(command_type, **command_options)
     client.puts(JSON.generate(type: "success"))
-  end
-
-  def normalize_command(command_type, command_options)
-    return [command_type, command_options] unless command_type == "graceful_no_wait"
-
-    command_type = "graceful"
-    command_options[:wait_for_gracefully_stopped] = false
-    [command_type, command_options]
   end
 
   def used_process_bot_ports

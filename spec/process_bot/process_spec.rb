@@ -38,7 +38,7 @@ describe ProcessBot::Process do
 
     it "sends a graceful_no_wait command through the client socket" do
       fake_client = instance_double(TCPSocket)
-      expected_payload = "{\"command\":\"graceful_no_wait\",\"options\":{\"command\":\"graceful_no_wait\",\"port\":7050,\"wait_for_gracefully_stopped\":false}}"
+      expected_payload = "{\"command\":\"graceful_no_wait\",\"options\":{\"command\":\"graceful_no_wait\",\"port\":7050}}"
       expect(fake_client).to receive(:puts).with(expected_payload)
       expect(fake_client).to receive(:gets).with(no_args).and_return(JSON.generate(type: "success"))
       expect_any_instance_of(ProcessBot::ClientSocket).to receive(:client).at_least(:once).and_return(fake_client)

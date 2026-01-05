@@ -88,7 +88,7 @@ set :process_bot_log, false
 When running ProcessBot directly, you can control graceful waiting and log file output:
 
 ```bash
-bundle exec process_bot --command graceful --wait-for-gracefully-stopped false
+bundle exec process_bot --command graceful_no_wait
 bundle exec process_bot --command start --log-file-path /var/log/process_bot.log
 ```
 

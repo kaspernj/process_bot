@@ -21,10 +21,6 @@ class ProcessBot::Process::Handlers::Sidekiq
     Process.detach(pid) if pid
   end
 
-  def false_value?(value)
-    !value || value == "false"
-  end
-
   def process_running?(pid)
     return false unless pid
 
@@ -121,20 +117,6 @@ class ProcessBot::Process::Handlers::Sidekiq
     end
   end
 
-  def handle_graceful_wait(wait_for_gracefully_stopped)
-    if false_value?(wait_for_gracefully_stopped)
-      logger.logs "Dont wait for gracefully stopped - doing that in fork..."
-
-      daemonize do
-        wait_for_no_jobs_and_stop_sidekiq
-        exit
-      end
-    else
-      logger.logs "Wait for gracefully stopped..."
-      wait_for_no_jobs_and_stop_sidekiq
-    end
-  end
-
   def start_command # rubocop:disable Metrics/AbcSize
     args = []
 
@@ -159,15 +141,29 @@ class ProcessBot::Process::Handlers::Sidekiq
     command
   end
 
-  def graceful(**args)
-    wait_for_gracefully_stopped = args.fetch(:wait_for_gracefully_stopped, true)
+  def graceful(**_args)
     process.set_stopped
 
     return unless ensure_current_pid?
 
     return unless send_tstp_or_return
 
-    handle_graceful_wait(wait_for_gracefully_stopped)
+    logger.logs "Wait for gracefully stopped..."
+    wait_for_no_jobs_and_stop_sidekiq
+  end
+
+  def graceful_no_wait(**_args)
+    process.set_stopped
+
+    return unless ensure_current_pid?
+
+    return unless send_tstp_or_return
+
+    logger.logs "Dont wait for gracefully stopped - doing that in fork..."
+    daemonize do
+      wait_for_no_jobs_and_stop_sidekiq
+      exit
+    end
   end
 
   def stop(**_args)
