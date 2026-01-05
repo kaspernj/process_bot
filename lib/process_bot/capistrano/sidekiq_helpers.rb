@@ -36,13 +36,13 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     raise "No port in process bot data? #{process_bot_data}" unless process_bot_data["port"]
 
     mode = "exec"
+    wait_for_gracefully_stopped = process_bot_wait_setting(command)
 
     if mode == "runner"
       args = {command: command, port: process_bot_data.fetch("port")}
+      args["log"] = fetch(:process_bot_log) unless fetch(:process_bot_log).nil?
 
-      if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
-        args["wait_for_gracefully_stopped"] = fetch(:process_bot_wait_for_gracefully_stopped)
-      end
+      args["wait_for_gracefully_stopped"] = wait_for_gracefully_stopped unless wait_for_gracefully_stopped.nil?
 
       escaped_args = JSON.generate(args).gsub("\"", "\\\"")
       rails_runner_command = "require 'process_bot'; ProcessBot::Process.new(ProcessBot::Options.from_args(#{escaped_args})).execute!"
@@ -55,18 +55,27 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
         "--command #{command} " \
         "--port #{process_bot_data.fetch("port")}"
 
+      backend_command << " --log #{fetch(:process_bot_log)}" unless fetch(:process_bot_log).nil?
+
       args.each do |key, value|
         backend_command << "#{key} #{value}"
       end
 
-      if command == :graceful && !fetch(:process_bot_wait_for_gracefully_stopped).nil?
-        backend_command << " --wait-for-gracefully-stopped #{fetch(:process_bot_wait_for_gracefully_stopped)}"
-      end
+      backend_command << " --wait-for-gracefully-stopped #{wait_for_gracefully_stopped}" unless wait_for_gracefully_stopped.nil?
     else
       raise "Unknown mode: #{mode}"
     end
 
     backend.execute backend_command
+  end
+
+  def process_bot_wait_setting(command)
+    return fetch(:process_bot_wait_for_gracefully_stopped) unless fetch(:process_bot_wait_for_gracefully_stopped).nil?
+
+    return true if command == :graceful
+    return false if command == :graceful_no_wait
+
+    nil
   end
 
   def running_process_bot_processes

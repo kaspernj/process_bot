@@ -36,4 +36,27 @@ describe ProcessBot::Capistrano::SidekiqHelpers do
       ]
     end
   end
+
+  describe "#process_bot_wait_setting" do
+    it "defaults to waiting for graceful commands" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+      allow(sidekiq_helpers_test).to receive(:fetch).with(:process_bot_wait_for_gracefully_stopped).and_return(nil)
+
+      expect(sidekiq_helpers_test.process_bot_wait_setting(:graceful)).to be true
+    end
+
+    it "defaults to not waiting for graceful_no_wait commands" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+      allow(sidekiq_helpers_test).to receive(:fetch).with(:process_bot_wait_for_gracefully_stopped).and_return(nil)
+
+      expect(sidekiq_helpers_test.process_bot_wait_setting(:graceful_no_wait)).to be false
+    end
+
+    it "respects explicit wait setting" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+      allow(sidekiq_helpers_test).to receive(:fetch).with(:process_bot_wait_for_gracefully_stopped).and_return(false)
+
+      expect(sidekiq_helpers_test.process_bot_wait_setting(:graceful)).to be false
+    end
+  end
 end

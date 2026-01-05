@@ -46,6 +46,51 @@ ProcessBot provides these Sidekiq tasks:
 - `process_bot:sidekiq:graceful_no_wait` (stops fetching new jobs and returns immediately)
 - `process_bot:sidekiq:restart`
 
+You can also skip waiting for graceful completion:
+
+```bash
+cap production process_bot:sidekiq:graceful_no_wait
+```
+
+### Logging
+
+ProcessBot can log its internal actions (connecting, sending commands, signals, etc.) to stdout.
+Enable this with `--log true` (or `--logging true`):
+
+```bash
+bundle exec process_bot --command start --log true
+bundle exec process_bot --command graceful --log true
+bundle exec process_bot --command graceful_no_wait --log true
+```
+
+To write logs to a file, add `--log-file-path`:
+
+```bash
+bundle exec process_bot --command start --log true --log-file-path /var/log/process_bot.log
+```
+
+### Graceful shutdown waiting
+
+ProcessBot can wait for graceful shutdowns to finish, but this is optional.
+In Capistrano deploys the default is to continue immediately while Sidekiq finishes in the background.
+To wait for completion, set:
+
+```ruby
+set :process_bot_wait_for_gracefully_stopped, true
+```
+
+If you want both behaviors, use `process_bot:sidekiq:graceful` (wait) and
+`process_bot:sidekiq:graceful_no_wait` (no wait).
+
+### Capistrano logging
+
+ProcessBot logging is enabled by default in the Capistrano integration.
+You can override it with:
+
+```ruby
+set :process_bot_log, false
+```
+
 ### CLI options
 
 When running ProcessBot directly, you can control graceful waiting and log file output:

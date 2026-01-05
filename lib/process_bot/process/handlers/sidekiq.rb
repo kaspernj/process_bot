@@ -79,6 +79,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def send_tstp_or_return
+    logger.logs "Killing process with signal TSTP for PID #{current_pid}"
     Process.kill("TSTP", current_pid)
     true
   rescue Errno::ESRCH
@@ -101,6 +102,7 @@ class ProcessBot::Process::Handlers::Sidekiq
   end
 
   def terminate_pid(pid)
+    logger.logs "Killing process with signal TERM for PID #{pid}"
     Process.kill("TERM", pid)
   rescue Errno::ESRCH
     logger.logs "Sidekiq PID #{pid} is not running - nothing to stop"
