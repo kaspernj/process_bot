@@ -37,6 +37,24 @@ Run commands in the command line like this:
 cap production process_bot:sidekiq:graceful
 ```
 
+### Capistrano tasks
+
+ProcessBot provides these Sidekiq tasks:
+- `process_bot:sidekiq:start`
+- `process_bot:sidekiq:stop`
+- `process_bot:sidekiq:graceful` (stops fetching new jobs and waits for running jobs by default)
+- `process_bot:sidekiq:graceful_no_wait` (stops fetching new jobs and returns immediately)
+- `process_bot:sidekiq:restart`
+
+### CLI options
+
+When running ProcessBot directly, you can control graceful waiting and log file output:
+
+```bash
+bundle exec process_bot --command graceful --wait-for-gracefully-stopped false
+bundle exec process_bot --command start --log-file-path /var/log/process_bot.log
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
