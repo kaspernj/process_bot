@@ -70,8 +70,6 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
   end
 
   def process_bot_wait_setting(command)
-    return fetch(:process_bot_wait_for_gracefully_stopped) unless fetch(:process_bot_wait_for_gracefully_stopped).nil?
-
     return true if command == :graceful
     return false if command == :graceful_no_wait
 
