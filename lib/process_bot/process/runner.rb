@@ -130,20 +130,28 @@ class ProcessBot::Process::Runner
 
   def find_sidekiq_pid
     Thread.new do
-      while running? && !pid
-        related_sidekiq_processes.each do |related_sidekiq_process| # rubocop:disable Lint/UnreachableLoop
-          logger.logs "Found PID: #{related_sidekiq_process.pid}"
-          @pid = related_sidekiq_process.pid
-          options.events.call(:on_process_started, pid: related_sidekiq_process.pid)
+      wait_for_sidekiq_pid
+    end
+  end
 
-          break
-        end
+  def wait_for_sidekiq_pid
+    while running? && !pid
+      assign_related_sidekiq_pid
 
-        unless pid
-          logger.logs "Waiting 1 second before trying to find Sidekiq PID again"
-          sleep 1
-        end
+      unless pid
+        logger.logs "Waiting 1 second before trying to find Sidekiq PID again"
+        sleep 1
       end
+    end
+  end
+
+  def assign_related_sidekiq_pid
+    related_sidekiq_processes.each do |related_sidekiq_process| # rubocop:disable Lint/UnreachableLoop
+      logger.logs "Found PID: #{related_sidekiq_process.pid}"
+      @pid = related_sidekiq_process.pid
+      options.events.call(:on_process_started, pid: related_sidekiq_process.pid)
+
+      break
     end
   end
 end

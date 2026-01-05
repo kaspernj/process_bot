@@ -30,12 +30,7 @@ class ProcessBot::Process
       logger.logs "Starting process"
       start
     elsif command == "graceful" || command == "stop"
-      begin
-        logger.logs "Sending #{command} command"
-        client.send_command(command: command, options: options.options)
-      rescue Errno::ECONNREFUSED => e
-        raise e unless options[:ignore_no_process_bot]
-      end
+      send_control_command(command)
     else
       raise "Unknown command: #{command}"
     end
@@ -106,6 +101,13 @@ class ProcessBot::Process
 
   def run
     runner.run
+  end
+
+  def send_control_command(command)
+    logger.logs "Sending #{command} command"
+    client.send_command(command: command, options: options.options)
+  rescue Errno::ECONNREFUSED => e
+    raise e unless options[:ignore_no_process_bot]
   end
 
   def runner
