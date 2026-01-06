@@ -70,7 +70,7 @@ namespace :process_bot do
       end
     end
 
-    desc "Ensure the configured number of Sidekiq ProcessBots are running (excluding graceful shutdowns)"
+    desc "Ensure the configured number of Sidekiq ProcessBots are running (starts replacements for graceful shutdowns)"
     task :ensure_running do
       on roles fetch(:sidekiq_roles) do |role|
         git_plugin.switch_user(role) do
@@ -91,10 +91,12 @@ namespace :process_bot do
             git_plugin.process_bot_sidekiq_index(process_bot_data)
           end
 
-          puts "ProcessBot Sidekiq in graceful shutdown: #{graceful_indexes.join(", ")}" if graceful_indexes.any?
+          if graceful_indexes.any?
+            puts "ProcessBot Sidekiq in graceful shutdown: #{graceful_indexes.join(", ")}"
+            puts "Starting replacements for graceful shutdowns to reach #{desired_processes} running processes"
+          end
 
-          desired_indexes = (0...desired_processes).to_a
-          missing_indexes = desired_indexes - active_indexes - graceful_indexes
+          missing_indexes = git_plugin.missing_sidekiq_indexes(desired_processes, active_indexes)
           missing_count = desired_processes - active_indexes.count
 
           if missing_count.negative?
@@ -107,14 +109,9 @@ namespace :process_bot do
               puts "Starting Sidekiq with ProcessBot #{idx} (missing)"
               git_plugin.start_sidekiq(idx)
             end
-          else
+          elsif missing_count.zero?
             puts "All ProcessBot Sidekiq processes are running (#{active_indexes.count}/#{desired_processes})"
           end
-
-          return unless missing_count > missing_indexes.length
-
-          puts "Skipped starting #{missing_count - missing_indexes.length} processes because " \
-            "they are still in graceful shutdown"
         end
       end
     end

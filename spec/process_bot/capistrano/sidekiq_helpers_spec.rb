@@ -65,4 +65,12 @@ describe ProcessBot::Capistrano::SidekiqHelpers do
       expect(sidekiq_helpers_test.sidekiq_command_graceful?("sidekiq 6.5.7 app [0 of 25 busy]")).to be false
     end
   end
+
+  describe "#missing_sidekiq_indexes" do
+    it "returns desired indexes excluding active ones" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+
+      expect(sidekiq_helpers_test.missing_sidekiq_indexes(3, [1])).to eq [0, 2]
+    end
+  end
 end

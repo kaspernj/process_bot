@@ -44,7 +44,7 @@ ProcessBot provides these Sidekiq tasks:
 - `process_bot:sidekiq:stop`
 - `process_bot:sidekiq:graceful` (stops fetching new jobs and waits for running jobs by default)
 - `process_bot:sidekiq:graceful_no_wait` (stops fetching new jobs and returns immediately)
-- `process_bot:sidekiq:ensure_running` (starts missing processes, ignoring ones in graceful shutdown)
+- `process_bot:sidekiq:ensure_running` (starts missing processes, including replacements for graceful shutdowns)
 - `process_bot:sidekiq:restart`
 
 You can also skip waiting for graceful completion:
