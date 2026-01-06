@@ -94,7 +94,7 @@ namespace :process_bot do
           puts "ProcessBot Sidekiq in graceful shutdown: #{graceful_indexes.join(", ")}" if graceful_indexes.any?
 
           desired_indexes = (0...desired_processes).to_a
-          missing_indexes = desired_indexes - active_indexes - graceful_indexes
+          missing_indexes = desired_indexes - active_indexes
           missing_count = desired_processes - active_indexes.count
 
           if missing_count.negative?
@@ -107,8 +107,10 @@ namespace :process_bot do
               puts "Starting Sidekiq with ProcessBot #{idx} (missing)"
               git_plugin.start_sidekiq(idx)
             end
-          else
+          elsif missing_count.zero?
             puts "All ProcessBot Sidekiq processes are running (#{active_indexes.count}/#{desired_processes})"
+          else
+            puts "All missing ProcessBot Sidekiq processes are in graceful shutdown (#{active_indexes.count}/#{desired_processes})"
           end
 
           return unless missing_count > missing_indexes.length
