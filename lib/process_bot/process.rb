@@ -106,7 +106,8 @@ class ProcessBot::Process
 
   def send_control_command(command, **command_options)
     logger.logs "Sending #{command} command"
-    client.send_command(command: command, options: options.options.merge(command_options))
+    response = client.send_command(command: command, options: options.options.merge(command_options))
+    raise "No response from ProcessBot while sending #{command}" if response == :nil
   rescue Errno::ECONNREFUSED => e
     raise e unless options[:ignore_no_process_bot]
   end

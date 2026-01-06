@@ -82,4 +82,18 @@ describe ProcessBot::Process::Handlers::Sidekiq do
       sidekiq.stop
     end
   end
+
+  describe "#wait_for_sidekiq_exit" do
+    it "waits until the Sidekiq process is no longer running" do
+      options = ProcessBot::Options.new(handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+      process.instance_variable_set(:@current_pid, 123)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
+
+      expect(sidekiq).to receive(:process_running?).with(123).and_return(true, false)
+      expect(sidekiq).to receive(:sleep).with(1)
+
+      sidekiq.wait_for_sidekiq_exit
+    end
+  end
 end
