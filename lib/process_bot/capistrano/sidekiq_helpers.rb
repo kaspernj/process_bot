@@ -93,6 +93,31 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     processes
   end
 
+  def process_bot_sidekiq_index(process_bot_data)
+    process_bot_id = process_bot_data["id"].to_s
+    match = process_bot_id.match(/-(\d+)\z/)
+    return nil unless match
+
+    match[1].to_i
+  end
+
+  def sidekiq_command_graceful?(command)
+    return false unless command
+
+    normalized_command = command.to_s.downcase
+    normalized_command.include?("stopping") || normalized_command.include?("quiet")
+  end
+
+  def sidekiq_process_graceful?(process_bot_data)
+    sidekiq_pid = process_bot_data["pid"]
+    return false unless sidekiq_pid
+
+    command = backend.capture(:ps, "-o", "command=", "-p", sidekiq_pid.to_s).strip
+    sidekiq_command_graceful?(command)
+  rescue SSHKit::Command::Failed
+    false
+  end
+
   def sidekiq_user(role = nil)
     if role.nil?
       fetch(:sidekiq_user)

@@ -36,4 +36,33 @@ describe ProcessBot::Capistrano::SidekiqHelpers do
       ]
     end
   end
+
+  describe "#process_bot_sidekiq_index" do
+    it "parses the process index from the ProcessBot id" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+
+      expect(sidekiq_helpers_test.process_bot_sidekiq_index("id" => "sidekiq-20221019133124-3")).to eq 3
+    end
+
+    it "returns nil when the id does not include an index" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+
+      expect(sidekiq_helpers_test.process_bot_sidekiq_index("id" => "sidekiq-no-index")).to be_nil
+    end
+  end
+
+  describe "#sidekiq_command_graceful?" do
+    it "detects graceful shutdown commands" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+
+      expect(sidekiq_helpers_test.sidekiq_command_graceful?("sidekiq 6.5.7 app [3 of 25 stopping]")).to be true
+      expect(sidekiq_helpers_test.sidekiq_command_graceful?("sidekiq 6.5.7 app [3 of 25 quiet]")).to be true
+    end
+
+    it "returns false for normal busy output" do
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+
+      expect(sidekiq_helpers_test.sidekiq_command_graceful?("sidekiq 6.5.7 app [0 of 25 busy]")).to be false
+    end
+  end
 end

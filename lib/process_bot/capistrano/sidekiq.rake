@@ -70,6 +70,55 @@ namespace :process_bot do
       end
     end
 
+    desc "Ensure the configured number of Sidekiq ProcessBots are running (excluding graceful shutdowns)"
+    task :ensure_running do
+      on roles fetch(:sidekiq_roles) do |role|
+        git_plugin.switch_user(role) do
+          desired_processes = fetch(:sidekiq_processes).to_i
+          running_processes = git_plugin.running_process_bot_processes
+
+          graceful_processes = running_processes.select do |process_bot_data|
+            git_plugin.sidekiq_process_graceful?(process_bot_data)
+          end
+
+          active_processes = running_processes - graceful_processes
+
+          active_indexes = active_processes.filter_map do |process_bot_data|
+            git_plugin.process_bot_sidekiq_index(process_bot_data)
+          end
+
+          graceful_indexes = graceful_processes.filter_map do |process_bot_data|
+            git_plugin.process_bot_sidekiq_index(process_bot_data)
+          end
+
+          puts "ProcessBot Sidekiq in graceful shutdown: #{graceful_indexes.join(", ")}" if graceful_indexes.any?
+
+          desired_indexes = (0...desired_processes).to_a
+          missing_indexes = desired_indexes - active_indexes - graceful_indexes
+          missing_count = desired_processes - active_indexes.count
+
+          if missing_count.negative?
+            puts "Found #{active_indexes.count} running ProcessBot Sidekiq processes; desired is #{desired_processes}"
+            missing_count = 0
+          end
+
+          if missing_indexes.any?
+            missing_indexes.each do |idx|
+              puts "Starting Sidekiq with ProcessBot #{idx} (missing)"
+              git_plugin.start_sidekiq(idx)
+            end
+          else
+            puts "All ProcessBot Sidekiq processes are running (#{active_indexes.count}/#{desired_processes})"
+          end
+
+          return unless missing_count > missing_indexes.length
+
+          puts "Skipped starting #{missing_count - missing_indexes.length} processes because " \
+            "they are still in graceful shutdown"
+        end
+      end
+    end
+
     desc "Restart Sidekiq and ProcessBot"
     task :restart do
       invoke! "process_bot:sidekiq:stop"
