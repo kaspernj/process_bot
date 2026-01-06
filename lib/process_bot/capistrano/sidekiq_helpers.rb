@@ -118,6 +118,12 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     false
   end
 
+  def missing_sidekiq_indexes(desired_processes, active_indexes)
+    desired = desired_processes.to_i
+    desired_indexes = (0...desired).to_a
+    desired_indexes - active_indexes
+  end
+
   def sidekiq_user(role = nil)
     if role.nil?
       fetch(:sidekiq_user)
