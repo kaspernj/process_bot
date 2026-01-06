@@ -71,6 +71,7 @@ describe ProcessBot::ClientSocket do
     expect(process.handler_instance).to receive(:wait_for_no_jobs_and_stop_sidekiq).and_call_original
     expect(process.handler_instance).to receive(:wait_for_no_jobs)
     expect(process.handler_instance).to receive(:stop)
+    expect(process.handler_instance).to receive(:wait_for_sidekiq_exit)
 
     control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
     control_socket.start

@@ -85,6 +85,7 @@ describe ProcessBot::Process do
       expect(process.handler_instance).to receive(:sleep).with(1)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output2.join("\n"))
       expect(Process).to receive(:kill).with("TERM", 342_132)
+      expect(process.handler_instance).to receive(:wait_for_sidekiq_exit)
 
       process.handler_instance.wait_for_no_jobs_and_stop_sidekiq
     end
@@ -112,6 +113,7 @@ describe ProcessBot::Process do
       expect(process.handler_instance).to receive(:sleep).with(1)
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep 342132").once.and_return(fake_process_output2.join("\n"))
       expect(Process).to receive(:kill).with("TERM", 342_132)
+      expect(process.handler_instance).to receive(:wait_for_sidekiq_exit)
 
       process.handler_instance.wait_for_no_jobs_and_stop_sidekiq
     end

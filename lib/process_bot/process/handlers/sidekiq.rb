@@ -215,5 +215,15 @@ class ProcessBot::Process::Handlers::Sidekiq
     logger.logs "Wait for no jobs and Stop sidekiq"
     wait_for_no_jobs
     stop
+    wait_for_sidekiq_exit
+  end
+
+  def wait_for_sidekiq_exit
+    return unless current_pid
+
+    while process_running?(current_pid)
+      logger.logs "Waiting for Sidekiq PID #{current_pid} to stop"
+      sleep 1
+    end
   end
 end
