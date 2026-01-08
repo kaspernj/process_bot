@@ -79,13 +79,20 @@ class ProcessBot::ControlSocket
 
       if command_type == "graceful" || command_type == "graceful_no_wait" || command_type == "stop"
         begin
+          unless process.accept_control_commands?
+            client.puts(JSON.generate(type: "error", message: "ProcessBot is shutting down", backtrace: Thread.current.backtrace))
+            break
+          end
+
           command_options = if command["options"]
             symbolize_keys(command.fetch("options"))
           else
             {}
           end
 
-          run_command(command_type, command_options, client)
+          process.with_control_command do
+            run_command(command_type, command_options, client)
+          end
         rescue => e # rubocop:disable Style/RescueStandardError
           logger.error e.message
           logger.error e.backtrace
