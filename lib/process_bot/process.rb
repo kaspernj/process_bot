@@ -18,6 +18,7 @@ class ProcessBot::Process
   def initialize(options)
     @options = options
     @stopped = false
+    @accept_control_commands = true
     @control_command_monitor = Monitor.new
     @control_commands_in_flight = 0
 
@@ -89,6 +90,7 @@ class ProcessBot::Process
       run
 
       if stopped
+        stop_accepting_control_commands
         wait_for_control_commands
         break
       else
@@ -142,6 +144,15 @@ class ProcessBot::Process
     control_command_monitor.synchronize do
       @control_commands_in_flight -= 1
     end
+  end
+
+  def accept_control_commands?
+    @accept_control_commands
+  end
+
+  def stop_accepting_control_commands
+    @accept_control_commands = false
+    @control_socket&.stop
   end
 
   def wait_for_control_commands

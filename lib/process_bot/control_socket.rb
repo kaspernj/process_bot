@@ -79,6 +79,11 @@ class ProcessBot::ControlSocket
 
       if command_type == "graceful" || command_type == "graceful_no_wait" || command_type == "stop"
         begin
+          unless process.accept_control_commands?
+            client.puts(JSON.generate(type: "error", message: "ProcessBot is shutting down", backtrace: Thread.current.backtrace))
+            break
+          end
+
           command_options = if command["options"]
             symbolize_keys(command.fetch("options"))
           else

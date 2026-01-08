@@ -143,6 +143,28 @@ describe ProcessBot::ClientSocket do
     expect(result).to eq :nil
   end
 
+  it "rejects new commands when ProcessBot is shutting down" do
+    options = ProcessBot::Options.new(handler: "sidekiq")
+    process = ProcessBot::Process.new(options)
+    process.instance_variable_set(:@accept_control_commands, false)
+
+    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
+    control_socket.start
+
+    begin
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: control_socket.port))
+
+      begin
+        expect { client_socket.send_command(command: "stop") }
+          .to raise_error(RuntimeError, "Command raised an error: ProcessBot is shutting down")
+      ensure
+        client_socket.close
+      end
+    ensure
+      control_socket.stop
+    end
+  end
+
   it "accepts multiple client connections" do
     options = ProcessBot::Options.new(handler: "sidekiq")
     process = ProcessBot::Process.new(options)
