@@ -85,7 +85,9 @@ class ProcessBot::ControlSocket
             {}
           end
 
-          run_command(command_type, command_options, client)
+          process.with_control_command do
+            run_command(command_type, command_options, client)
+          end
         rescue => e # rubocop:disable Style/RescueStandardError
           logger.error e.message
           logger.error e.backtrace

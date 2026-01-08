@@ -1,5 +1,6 @@
 require "forwardable"
 require "json"
+require "monitor"
 require "string-cases"
 
 class ProcessBot::Process
@@ -12,11 +13,13 @@ class ProcessBot::Process
   autoload :Handlers, "#{__dir__}/process/handlers"
   autoload :Runner, "#{__dir__}/process/runner"
 
-  attr_reader :current_pid, :current_process_title, :options, :port, :stopped
+  attr_reader :control_command_monitor, :current_pid, :current_process_title, :options, :port, :stopped
 
   def initialize(options)
     @options = options
     @stopped = false
+    @control_command_monitor = Monitor.new
+    @control_commands_in_flight = 0
 
     options.events.connect(:on_process_started, &method(:on_process_started)) # rubocop:disable Performance/MethodObjectAsBlock
     options.events.connect(:on_socket_opened, &method(:on_socket_opened)) # rubocop:disable Performance/MethodObjectAsBlock
@@ -86,6 +89,7 @@ class ProcessBot::Process
       run
 
       if stopped
+        wait_for_control_commands
         break
       else
         logger.logs "Process stopped - starting again after 1 sec"
@@ -126,5 +130,27 @@ class ProcessBot::Process
     process_args = {application: options[:application], handler: handler_name, id: options[:id], pid: current_pid, port: port}
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
+  end
+
+  def with_control_command
+    control_command_monitor.synchronize do
+      @control_commands_in_flight += 1
+    end
+
+    yield
+  ensure
+    control_command_monitor.synchronize do
+      @control_commands_in_flight -= 1
+    end
+  end
+
+  def wait_for_control_commands
+    sleep 0.1 while control_commands_in_flight.positive?
+  end
+
+  def control_commands_in_flight
+    control_command_monitor.synchronize do
+      @control_commands_in_flight
+    end
   end
 end

@@ -61,6 +61,38 @@ describe ProcessBot::Process do
     end
   end
 
+  describe "#wait_for_control_commands" do
+    it "waits for control commands to finish before returning" do
+      process = ProcessBot::Process.new(ProcessBot::Options.new(command: "start"))
+      command_started = Queue.new
+      command_finish = Queue.new
+      wait_finished = Queue.new
+
+      command_thread = Thread.new do
+        process.with_control_command do
+          command_started << true
+          command_finish.pop
+        end
+      end
+
+      command_started.pop
+
+      wait_thread = Thread.new do
+        process.wait_for_control_commands
+        wait_finished << true
+      end
+
+      sleep 0.02
+      expect(wait_finished).to be_empty
+
+      command_finish << true
+      wait_thread.join
+      command_thread.join
+
+      expect(wait_finished).not_to be_empty
+    end
+  end
+
   describe "#wait_for_no_jobs_and_stop_sidekiq" do
     it "waits for Sidekiq to have no running jobs and then terminates it" do
       fake_process_output1 = [
