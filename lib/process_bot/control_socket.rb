@@ -118,7 +118,8 @@ class ProcessBot::ControlSocket
   end
 
   def broadcast_log(_event_name, output:, type:)
-    payload = JSON.generate(type: "log", stream: type.to_s, output: output)
+    safe_output = normalize_output(output)
+    payload = JSON.generate(type: "log", stream: type.to_s, output: safe_output)
 
     clients_snapshot.each do |client|
       client.puts(payload)
@@ -143,6 +144,10 @@ class ProcessBot::ControlSocket
     clients_mutex.synchronize do
       clients.dup
     end
+  end
+
+  def normalize_output(output)
+    output.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")
   end
 
   def symbolize_keys(hash)

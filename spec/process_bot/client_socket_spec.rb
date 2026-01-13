@@ -262,4 +262,35 @@ describe ProcessBot::ClientSocket do
     expect(log_messages).not_to be_empty
     expect(log_messages.any? { |message| message["output"].include?("Command stop") }).to be true
   end
+
+  it "broadcasts log messages with invalid bytes sanitized" do
+    options = ProcessBot::Options.new(handler: "sidekiq", log: true, port: 7088)
+    process = ProcessBot::Process.new(options)
+
+    control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
+    control_socket.start
+
+    client = nil
+
+    begin
+      client = TCPSocket.new("localhost", control_socket.port)
+      invalid_output = "ok\xFF".force_encoding("UTF-8")
+
+      50.times do
+        break if control_socket.clients_snapshot.any?
+
+        sleep 0.01
+      end
+
+      control_socket.broadcast_log(:on_log, output: invalid_output, type: :stdout)
+
+      response = JSON.parse(client.gets)
+
+      expect(response.fetch("type")).to eq "log"
+      expect(response.fetch("output")).to eq "ok?"
+    ensure
+      client&.close
+      control_socket.stop
+    end
+  end
 end
