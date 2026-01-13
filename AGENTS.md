@@ -13,3 +13,4 @@
 - Added `graceful_no_wait` command and Capistrano task for non-blocking graceful shutdowns.
 - Always add or update tests for new/changed functionality, and run them.
 - Added coverage for graceful_no_wait and Capistrano wait defaults.
+- Bumped version to 0.1.20 for log streaming updates.
