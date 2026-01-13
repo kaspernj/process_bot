@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    process_bot (0.1.20)
+    process_bot (0.1.21)
       knjrbfw (>= 0.0.116)
       pry
       rake

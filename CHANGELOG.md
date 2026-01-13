@@ -4,6 +4,7 @@
 - Sanitize broadcast log output to keep JSON encoding safe.
 - Bump version to 0.1.20.
 - Flush log output immediately so Capistrano can stream it.
+- Bump version to 0.1.21.
 
 ## [0.1.0] - 2022-04-03
 
