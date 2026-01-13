@@ -39,12 +39,16 @@ class ProcessBot::Logger
     case type
     when :stdout
       $stdout.print output
+      $stdout.flush
     when :stderr
       $stderr.print output
+      $stderr.flush
     when :info
       $stdout.print output if logging_enabled?
+      $stdout.flush if logging_enabled?
     when :debug
       $stdout.print output if debug_enabled?
+      $stdout.flush if debug_enabled?
     else
       raise "Unknown type: #{type}"
     end

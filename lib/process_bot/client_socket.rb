@@ -58,8 +58,10 @@ class ProcessBot::ClientSocket
 
     if stream == "stderr"
       $stderr.print output
+      $stderr.flush
     else
       $stdout.print output
+      $stdout.flush
     end
   end
 end
