@@ -1,3 +1,4 @@
+require "json"
 require "socket"
 
 class ProcessBot::ClientSocket
@@ -26,23 +27,39 @@ class ProcessBot::ClientSocket
     logger.logs "Sending: #{data}"
     begin
       client.puts(JSON.generate(data))
-      response_raw = client.gets
+      loop do
+        response_raw = client.gets
+        return :nil if response_raw.nil?
+
+        response = JSON.parse(response_raw)
+
+        case response.fetch("type")
+        when "log"
+          write_log_output(response)
+        when "success"
+          return :success
+        when "error"
+          error = RuntimeError.new("Command raised an error: #{response.fetch("message")}")
+          error.set_backtrace(response.fetch("backtrace") + Thread.current.backtrace)
+
+          raise error
+        else
+          raise "Unknown response type: #{response.fetch("type")}"
+        end
+      end
     rescue Errno::ECONNRESET, Errno::EPIPE
-      return :nil
+      :nil
     end
+  end
 
-    # Happens if process is interrupted
-    return :nil if response_raw.nil?
+  def write_log_output(response)
+    output = response["output"].to_s
+    stream = response.fetch("stream", "stdout")
 
-    response = JSON.parse(response_raw)
-
-    return :success if response.fetch("type") == "success"
-
-    if response.fetch("type") == "error"
-      error = RuntimeError.new("Command raised an error: #{response.fetch("message")}")
-      error.set_backtrace(response.fetch("backtrace") + Thread.current.backtrace)
-
-      raise error
+    if stream == "stderr"
+      $stderr.print output
+    else
+      $stdout.print output
     end
   end
 end

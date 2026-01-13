@@ -3,12 +3,14 @@ require "json"
 require "knjrbfw"
 
 class ProcessBot::ControlSocket
-  attr_reader :options, :port, :process, :server
+  attr_reader :clients, :clients_mutex, :options, :port, :process, :server
 
   def initialize(options:, process:)
     @options = options
     @process = process
     @port = options.fetch(:port).to_i
+    @clients = []
+    @clients_mutex = Mutex.new
   end
 
   def logger
@@ -20,6 +22,9 @@ class ProcessBot::ControlSocket
     run_client_loop
     logger.logs "TCPServer started"
     options.events.call(:on_socket_opened, port: @port)
+    options.events.connect(:on_log) do |event_name, output:, type:|
+      broadcast_log(event_name, output: output, type: type)
+    end
   end
 
   def start_tcp_server
@@ -70,6 +75,8 @@ class ProcessBot::ControlSocket
   end
 
   def handle_client(client) # rubocop:disable Metrics/AbcSize
+    add_client(client)
+
     loop do
       data = client.gets
       break if data.nil? # Client disconnected
@@ -105,6 +112,42 @@ class ProcessBot::ControlSocket
         client.puts(JSON.generate(type: "error", message: "Unknown command: #{command_type}", backtrace: Thread.current.backtrace))
       end
     end
+  ensure
+    remove_client(client)
+    client.close unless client.closed?
+  end
+
+  def broadcast_log(_event_name, output:, type:)
+    safe_output = normalize_output(output)
+    payload = JSON.generate(type: "log", stream: type.to_s, output: safe_output)
+
+    clients_snapshot.each do |client|
+      client.puts(payload)
+    rescue IOError, Errno::EPIPE, Errno::ECONNRESET
+      remove_client(client)
+    end
+  end
+
+  def add_client(client)
+    clients_mutex.synchronize do
+      clients << client
+    end
+  end
+
+  def remove_client(client)
+    clients_mutex.synchronize do
+      clients.delete(client)
+    end
+  end
+
+  def clients_snapshot
+    clients_mutex.synchronize do
+      clients.dup
+    end
+  end
+
+  def normalize_output(output)
+    output.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")
   end
 
   def symbolize_keys(hash)

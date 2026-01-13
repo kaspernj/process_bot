@@ -24,6 +24,7 @@ class ProcessBot::Options
       require "knjrbfw"
 
       event_handler = ::Knj::Event_handler.new
+      event_handler.add_event(name: :on_log)
       event_handler.add_event(name: :on_process_started)
       event_handler.add_event(name: :on_socket_opened)
       event_handler

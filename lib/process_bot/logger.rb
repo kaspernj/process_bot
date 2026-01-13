@@ -11,6 +11,7 @@ class ProcessBot::Logger
 
   def log(output, type: :stdout)
     write_output(output, type)
+    broadcast_log(output, type)
 
     return unless log_to_file?
     return if type == :debug && !debug_enabled?
@@ -52,6 +53,25 @@ class ProcessBot::Logger
   def write_log_file(output)
     fp_log.write(output)
     fp_log.flush
+  end
+
+  def broadcast_log(output, type)
+    return unless should_broadcast?(type)
+
+    options.events.call(:on_log, output: output, type: type)
+  end
+
+  def should_broadcast?(type)
+    case type
+    when :stdout, :stderr
+      true
+    when :info
+      logging_enabled?
+    when :debug
+      debug_enabled?
+    else
+      false
+    end
   end
 
   def debug_enabled?
