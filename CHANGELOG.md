@@ -5,6 +5,7 @@
 - Bump version to 0.1.20.
 - Flush log output immediately so Capistrano can stream it.
 - Bump version to 0.1.21.
+- Add optional Sidekiq restart overlap and a new ProcessBot restart command.
 
 ## [0.1.0] - 2022-04-03
 

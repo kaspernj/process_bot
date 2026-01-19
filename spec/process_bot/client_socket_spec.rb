@@ -125,6 +125,28 @@ describe ProcessBot::ClientSocket do
     expect(process).to have_attributes(stopped: true)
   end
 
+  it "sends a restart command to the server" do
+    options = ProcessBot::Options.new(handler: "sidekiq")
+    process = ProcessBot::Process.new(options)
+
+    expect(process).to receive(:restart)
+
+    control_socket = ProcessBot::ControlSocket.new(options: ProcessBot::Options.new(port: 7086), process: process)
+    control_socket.start
+
+    begin
+      client_socket = ProcessBot::ClientSocket.new(options: ProcessBot::Options.new(port: control_socket.port))
+
+      begin
+        client_socket.send_command(command: "restart")
+      ensure
+        client_socket.close
+      end
+    ensure
+      control_socket.stop
+    end
+  end
+
   it "returns nil when the socket is reset while waiting for a response" do
     fake_client = instance_double(TCPSocket)
     allow(fake_client).to receive(:puts).and_return(true)

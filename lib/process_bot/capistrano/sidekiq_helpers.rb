@@ -167,6 +167,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     args += ["--sidekiq-queues", Array(fetch(:sidekiq_queue)).join(",")] if fetch(:sidekiq_queue)
     args += ["--sidekiq-config", fetch(:sidekiq_config)] if fetch(:sidekiq_config)
     args += ["--sidekiq-concurrency", fetch(:sidekiq_concurrency)] if fetch(:sidekiq_concurrency)
+    args += ["--sidekiq-restart-overlap", fetch(:sidekiq_restart_overlap)] unless fetch(:sidekiq_restart_overlap, nil).nil?
     if (process_options = fetch(:sidekiq_options_per_process))
       args += process_options[idx]
     end
