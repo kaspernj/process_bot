@@ -7,9 +7,7 @@ describe ProcessBot::Process do
       options = ProcessBot::Options.new(command: "start")
       process = ProcessBot::Process.new(options)
 
-      expect(process).to receive(:start_control_socket)
-      expect(process).to receive(:run)
-      expect(process).to receive(:stopped).and_return(true)
+      expect(process).to receive(:start)
 
       process.execute!
     end
@@ -44,6 +42,18 @@ describe ProcessBot::Process do
       expect_any_instance_of(ProcessBot::ClientSocket).to receive(:client).at_least(:once).and_return(fake_client)
 
       options = ProcessBot::Options.new(command: "graceful_no_wait", port: 7050)
+
+      ProcessBot::Process.new(options).execute!
+    end
+
+    it "sends a restart command through the client socket" do
+      fake_client = instance_double(TCPSocket)
+      expected_payload = "{\"command\":\"restart\",\"options\":{\"command\":\"restart\",\"port\":7050}}"
+      expect(fake_client).to receive(:puts).with(expected_payload)
+      expect(fake_client).to receive(:gets).with(no_args).and_return(JSON.generate(type: "success"))
+      expect_any_instance_of(ProcessBot::ClientSocket).to receive(:client).at_least(:once).and_return(fake_client)
+
+      options = ProcessBot::Options.new(command: "restart", port: 7050)
 
       ProcessBot::Process.new(options).execute!
     end
@@ -148,6 +158,37 @@ describe ProcessBot::Process do
       expect(process.handler_instance).to receive(:wait_for_sidekiq_exit)
 
       process.handler_instance.wait_for_no_jobs_and_stop_sidekiq
+    end
+  end
+
+  describe "#restart" do
+    it "starts a replacement sidekiq when overlap is enabled" do
+      options = ProcessBot::Options.new(handler: "sidekiq", sidekiq_restart_overlap: true)
+      process = ProcessBot::Process.new(options)
+
+      expect(process.handler_instance).to receive(:graceful_no_wait).with(stop_process_bot: false)
+      expect(process).to receive(:start_runner_instance)
+
+      process.restart
+    end
+
+    it "uses restart options to enable overlap" do
+      options = ProcessBot::Options.new(handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+
+      expect(process.handler_instance).to receive(:graceful_no_wait).with(stop_process_bot: false)
+      expect(process).to receive(:start_runner_instance)
+
+      process.restart(sidekiq_restart_overlap: true)
+    end
+
+    it "gracefully restarts when overlap is disabled" do
+      options = ProcessBot::Options.new(handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+
+      expect(process.handler_instance).to receive(:graceful).with(stop_process_bot: false)
+
+      process.restart
     end
   end
 end

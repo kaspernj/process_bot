@@ -141,8 +141,8 @@ class ProcessBot::Process::Handlers::Sidekiq
     command
   end
 
-  def graceful(**_args)
-    process.set_stopped
+  def graceful(stop_process_bot: true, **_args)
+    process.set_stopped if stop_process_bot
 
     return unless ensure_current_pid?
 
@@ -152,8 +152,8 @@ class ProcessBot::Process::Handlers::Sidekiq
     wait_for_no_jobs_and_stop_sidekiq
   end
 
-  def graceful_no_wait(**_args)
-    process.set_stopped
+  def graceful_no_wait(stop_process_bot: true, **_args)
+    process.set_stopped if stop_process_bot
 
     return unless ensure_current_pid?
 

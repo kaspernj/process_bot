@@ -50,6 +50,17 @@ describe ProcessBot::Process::Handlers::Sidekiq do
 
       expect(process.current_pid).to eq 222
     end
+
+    it "does not stop the process bot when requested" do
+      options = ProcessBot::Options.new(application: "sample_app", handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+      sidekiq = ProcessBot::Process::Handlers::Sidekiq.new(process)
+
+      allow(sidekiq).to receive_messages(ensure_current_pid?: false)
+      expect(process).not_to receive(:set_stopped)
+
+      sidekiq.graceful(stop_process_bot: false)
+    end
   end
 
   describe "#graceful_no_wait" do

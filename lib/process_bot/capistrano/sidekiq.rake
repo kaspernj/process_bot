@@ -13,6 +13,7 @@ namespace :load do
     set :sidekiq_processes, 1
     set :sidekiq_options_per_process, nil
     set :sidekiq_user, nil
+    set :sidekiq_restart_overlap, nil
     set :process_bot_log, true
     # Rbenv, Chruby, and RVM integration
     set :rbenv_map_bins, fetch(:rbenv_map_bins).to_a + ["sidekiq", "sidekiqctl"]
@@ -118,8 +119,27 @@ namespace :process_bot do
 
     desc "Restart Sidekiq and ProcessBot"
     task :restart do
-      invoke! "process_bot:sidekiq:stop"
-      invoke! "process_bot:sidekiq:start"
+      if fetch(:sidekiq_restart_overlap, nil)
+        on roles fetch(:sidekiq_roles) do |role|
+          git_plugin.switch_user(role) do
+            running_processes = git_plugin.running_process_bot_processes
+
+            if running_processes.any?
+              running_processes.each do |process_bot_process|
+                git_plugin.process_bot_command(process_bot_process, :restart)
+              end
+            else
+              fetch(:sidekiq_processes).times do |idx|
+                puts "Starting Sidekiq with ProcessBot #{idx}"
+                git_plugin.start_sidekiq(idx)
+              end
+            end
+          end
+        end
+      else
+        invoke! "process_bot:sidekiq:stop"
+        invoke! "process_bot:sidekiq:start"
+      end
     end
   end
 end

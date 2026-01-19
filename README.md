@@ -75,6 +75,22 @@ bundle exec process_bot --command start --log true --log-file-path /var/log/proc
 Use `process_bot:sidekiq:graceful` to wait for running jobs, and
 `process_bot:sidekiq:graceful_no_wait` to return immediately while Sidekiq drains.
 
+### Overlapping restarts
+
+You can restart Sidekiq while the old process drains by enabling overlap on the ProcessBot instance:
+
+```ruby
+set :sidekiq_restart_overlap, true
+```
+
+When enabled, `process_bot:sidekiq:restart` will use the overlap behavior.
+
+Or when running ProcessBot directly:
+
+```bash
+bundle exec process_bot --command restart --sidekiq-restart-overlap true
+```
+
 ### Capistrano logging
 
 ProcessBot logging is enabled by default in the Capistrano integration.
