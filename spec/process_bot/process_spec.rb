@@ -172,6 +172,16 @@ describe ProcessBot::Process do
       process.restart
     end
 
+    it "uses restart options to enable overlap" do
+      options = ProcessBot::Options.new(handler: "sidekiq")
+      process = ProcessBot::Process.new(options)
+
+      expect(process.handler_instance).to receive(:graceful_no_wait).with(stop_process_bot: false)
+      expect(process).to receive(:start_runner_instance)
+
+      process.restart(sidekiq_restart_overlap: true)
+    end
+
     it "gracefully restarts when overlap is disabled" do
       options = ProcessBot::Options.new(handler: "sidekiq")
       process = ProcessBot::Process.new(options)

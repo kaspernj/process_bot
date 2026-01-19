@@ -103,11 +103,11 @@ class ProcessBot::Process
     end
   end
 
-  def restart(**_args)
+  def restart(**args)
     logger.logs "Restart process"
 
     if handler_name == "sidekiq"
-      if restart_overlap?
+      if restart_overlap?(args)
         handler_instance.graceful_no_wait(stop_process_bot: false)
         start_runner_instance
       else
@@ -226,8 +226,12 @@ class ProcessBot::Process
     end
   end
 
-  def restart_overlap?
-    value = options[:sidekiq_restart_overlap]
+  def restart_overlap?(command_options = {})
+    value = if command_options.key?(:sidekiq_restart_overlap)
+      command_options[:sidekiq_restart_overlap]
+    else
+      options[:sidekiq_restart_overlap]
+    end
     return false if value.nil?
     return value if value == true || value == false
 
