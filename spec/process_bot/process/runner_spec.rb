@@ -2,13 +2,15 @@ require "spec_helper"
 
 describe ProcessBot::Process::Runner do
   describe "#stop_related_processes" do
-    it "does not crash when subprocess pid is missing" do
+    it "raises when subprocess pid is missing" do
       options = ProcessBot::Options.new(application: "sample_app_name")
       runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
 
       expect(Knj::Unix_proc).not_to receive(:list)
 
-      expect { runner.stop_related_processes }.not_to raise_error
+      expect do
+        runner.stop_related_processes
+      end.to raise_error(RuntimeError, /subprocess PGID could not be resolved/)
     end
   end
 
