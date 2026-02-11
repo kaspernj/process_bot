@@ -1,6 +1,17 @@
 require "spec_helper"
 
 describe ProcessBot::Process::Runner do
+  describe "#stop_related_processes" do
+    it "does not crash when subprocess pid is missing" do
+      options = ProcessBot::Options.new(application: "sample_app_name")
+      runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
+
+      expect(Knj::Unix_proc).not_to receive(:list)
+
+      expect { runner.stop_related_processes }.not_to raise_error
+    end
+  end
+
   describe "#find_sidekiq_pid" do
     it "finds the Sidekiq PID by scanning processes and comparing the PGID" do
       options = ProcessBot::Options.new(
@@ -15,7 +26,7 @@ describe ProcessBot::Process::Runner do
       ]
 
       expect(Knj::Os).to receive(:shellcmd).with("ps aux | grep sidekiq").and_return(fake_process_output.join("\n"))
-      expect(runner).to receive(:subprocess_pgid).and_return(1234).twice
+      expect(runner).to receive(:subprocess_pgid).and_return(1234).once
       expect(Process).to receive(:getpgid).with(341_824).and_return(4444)
       expect(Process).to receive(:getpgid).with(342_132).and_return(1234)
 
