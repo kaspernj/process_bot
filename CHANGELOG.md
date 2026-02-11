@@ -7,6 +7,7 @@
 - Bump version to 0.1.21.
 - Add optional Sidekiq restart overlap and a new ProcessBot restart command.
 - Guard stop-related process scanning when subprocess PID/PGID is unavailable and fail stop loudly.
+- Skip custom stop-related process scanning when no subprocess PID has been recorded, while still raising when a known PID has no PGID.
 
 ## [0.1.0] - 2022-04-03
 

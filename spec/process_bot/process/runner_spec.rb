@@ -2,10 +2,21 @@ require "spec_helper"
 
 describe ProcessBot::Process::Runner do
   describe "#stop_related_processes" do
-    it "raises when subprocess pid is missing" do
+    it "does not raise when subprocess pid is missing" do
       options = ProcessBot::Options.new(application: "sample_app_name")
       runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
 
+      expect(Knj::Unix_proc).not_to receive(:list)
+
+      expect { runner.stop_related_processes }.not_to raise_error
+    end
+
+    it "raises when subprocess pgid cannot be resolved for an existing pid" do
+      options = ProcessBot::Options.new(application: "sample_app_name")
+      runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
+      runner.instance_variable_set(:@subprocess_pid, 1234)
+
+      expect(runner).to receive(:subprocess_pgid).and_return(nil)
       expect(Knj::Unix_proc).not_to receive(:list)
 
       expect do

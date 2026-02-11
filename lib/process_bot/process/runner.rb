@@ -119,7 +119,7 @@ class ProcessBot::Process::Runner
   end
 
   def stop_related_processes
-    ensure_subprocess_pgid_for_stop!
+    return unless ensure_subprocess_pgid_for_stop!
 
     loop do
       processes = related_processes
@@ -139,7 +139,12 @@ class ProcessBot::Process::Runner
   end
 
   def ensure_subprocess_pgid_for_stop!
-    return if subprocess_pgid
+    if subprocess_pid.nil?
+      logger.logs "Skipping related process stop because subprocess PID is missing"
+      return false
+    end
+
+    return true if subprocess_pgid
 
     raise "Unable to stop related processes because subprocess PGID could not be resolved (subprocess PID: #{subprocess_pid.inspect})"
   end
