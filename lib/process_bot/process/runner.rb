@@ -65,7 +65,11 @@ class ProcessBot::Process::Runner
   end
 
   def subprocess_pgid
-    @subprocess_pgid ||= Process.getpgid(subprocess_pid)
+    return @subprocess_pgid if instance_variable_defined?(:@subprocess_pgid)
+
+    @subprocess_pgid = Process.getpgid(subprocess_pid) if subprocess_pid
+  rescue Errno::ESRCH
+    @subprocess_pgid = nil
   end
 
   def sidekiq_app_name
@@ -74,6 +78,8 @@ class ProcessBot::Process::Runner
 
   def related_processes
     related_processes = []
+    process_group_id = subprocess_pgid
+    return related_processes unless process_group_id
 
     Knj::Unix_proc.list do |process|
       begin
@@ -82,7 +88,7 @@ class ProcessBot::Process::Runner
         # Process no longer running
       end
 
-      related_processes << process if subprocess_pgid == process_pgid
+      related_processes << process if process_group_id == process_pgid
     end
 
     related_processes
@@ -90,6 +96,8 @@ class ProcessBot::Process::Runner
 
   def related_sidekiq_processes
     related_sidekiq_processes = []
+    process_group_id = subprocess_pgid
+    return related_sidekiq_processes unless process_group_id
 
     Knj::Unix_proc.list("grep" => "sidekiq") do |process|
       cmd = process.data.fetch("cmd")
@@ -103,7 +111,7 @@ class ProcessBot::Process::Runner
           # Process no longer running
         end
 
-        related_sidekiq_processes << process if subprocess_pgid == sidekiq_pgid
+        related_sidekiq_processes << process if process_group_id == sidekiq_pgid
       end
     end
 
@@ -111,6 +119,8 @@ class ProcessBot::Process::Runner
   end
 
   def stop_related_processes
+    ensure_subprocess_pgid_for_stop!
+
     loop do
       processes = related_processes
 
@@ -126,6 +136,12 @@ class ProcessBot::Process::Runner
         sleep 0.5
       end
     end
+  end
+
+  def ensure_subprocess_pgid_for_stop!
+    return if subprocess_pgid
+
+    raise "Unable to stop related processes because subprocess PGID could not be resolved (subprocess PID: #{subprocess_pid.inspect})"
   end
 
   def find_sidekiq_pid
