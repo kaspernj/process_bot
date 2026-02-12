@@ -9,6 +9,8 @@
 - Guard stop-related process scanning when subprocess PID/PGID is unavailable and fail stop loudly.
 - Wait briefly for subprocess PID assignment during stop; raise if PID is still missing so stop cannot silently succeed.
 
+- Require an active runner for custom stop commands to avoid constructing a fresh runner with no PID.
+
 ## [0.1.0] - 2022-04-03
 
 - Initial release

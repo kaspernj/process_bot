@@ -49,6 +49,6 @@ class ProcessBot::Process::Handlers::Custom
 
   def stop(**_args)
     logger.logs "Stop related processes"
-    process.runner.stop_related_processes
+    process.active_runner!.stop_related_processes
   end
 end

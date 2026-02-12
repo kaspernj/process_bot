@@ -161,6 +161,25 @@ describe ProcessBot::Process do
     end
   end
 
+  describe "#active_runner!" do
+    it "returns the active runner when present" do
+      process = ProcessBot::Process.new(ProcessBot::Options.new)
+      fake_runner = instance_double(ProcessBot::Process::Runner)
+      fake_runner_instance = instance_double(ProcessBot::Process::RunnerInstance, runner: fake_runner)
+      process.instance_variable_set(:@current_runner_instance, fake_runner_instance)
+
+      expect(process.active_runner!).to eq fake_runner
+    end
+
+    it "raises when there is no active runner" do
+      process = ProcessBot::Process.new(ProcessBot::Options.new)
+
+      expect do
+        process.active_runner!
+      end.to raise_error(RuntimeError, /no active runner is available/)
+    end
+  end
+
   describe "#restart" do
     it "starts a replacement sidekiq when overlap is enabled" do
       options = ProcessBot::Options.new(handler: "sidekiq", sidekiq_restart_overlap: true)
