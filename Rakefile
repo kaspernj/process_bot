@@ -32,7 +32,7 @@ namespace :release do
     puts "Bumped version to #{new_version}"
 
     sh "bundle install"
-    sh "git add #{version_path}"
+    sh "git add #{version_path} Gemfile.lock"
     sh "git commit -m \"Bump version to #{new_version}\""
     sh "bundle exec rake build"
 
