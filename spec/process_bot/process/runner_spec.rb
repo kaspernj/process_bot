@@ -7,6 +7,37 @@ describe ProcessBot::Process::Runner do
       runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
 
       expect(Knj::Unix_proc).not_to receive(:list)
+      expect(runner).to receive(:wait_for_subprocess_pid_for_stop!).and_raise(
+        RuntimeError,
+        "Unable to stop related processes because subprocess PID has not been recorded yet"
+      )
+
+      expect do
+        runner.stop_related_processes
+      end.to raise_error(RuntimeError, /subprocess PID has not been recorded yet/)
+    end
+
+    it "waits for subprocess pid and then stops related processes" do
+      options = ProcessBot::Options.new(application: "sample_app_name")
+      runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
+
+      runner.instance_variable_set(:@subprocess_pid, nil)
+
+      expect(runner).to receive(:subprocess_pid).and_return(nil)
+      expect(runner).to receive(:wait_for_subprocess_pid_for_stop!)
+      expect(runner).to receive(:subprocess_pgid).and_return(1234)
+      expect(runner).to receive(:related_processes).and_return([])
+
+      expect { runner.stop_related_processes }.not_to raise_error
+    end
+
+    it "raises when subprocess pgid cannot be resolved for an existing pid" do
+      options = ProcessBot::Options.new(application: "sample_app_name")
+      runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
+      runner.instance_variable_set(:@subprocess_pid, 1234)
+
+      expect(runner).to receive(:subprocess_pgid).and_return(nil)
+      expect(Knj::Unix_proc).not_to receive(:list)
 
       expect do
         runner.stop_related_processes

@@ -139,9 +139,21 @@ class ProcessBot::Process::Runner
   end
 
   def ensure_subprocess_pgid_for_stop!
-    return if subprocess_pgid
+    wait_for_subprocess_pid_for_stop! if subprocess_pid.nil?
+
+    return true if subprocess_pgid
 
     raise "Unable to stop related processes because subprocess PGID could not be resolved (subprocess PID: #{subprocess_pid.inspect})"
+  end
+
+  def wait_for_subprocess_pid_for_stop!
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 1
+
+    sleep 0.05 while subprocess_pid.nil? && Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+
+    return unless subprocess_pid.nil?
+
+    raise "Unable to stop related processes because subprocess PID has not been recorded yet"
   end
 
   def find_sidekiq_pid
