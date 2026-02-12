@@ -140,6 +140,17 @@ class ProcessBot::Process
     current_runner_instance&.runner || @runner ||= build_runner
   end
 
+  def active_runner
+    current_runner_instance&.runner
+  end
+
+  def active_runner!
+    runner_instance = active_runner
+    return runner_instance if runner_instance
+
+    raise "Unable to stop custom process because no active runner is available. Ensure the custom command runs in foreground."
+  end
+
   def update_process_title
     process_args = {application: options[:application], handler: handler_name, id: options[:id], pid: current_pid, port: port}
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
