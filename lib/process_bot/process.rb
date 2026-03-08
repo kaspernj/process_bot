@@ -3,7 +3,7 @@ require "json"
 require "monitor"
 require "string-cases"
 
-class ProcessBot::Process
+class ProcessBot::Process # rubocop:disable Metrics/ClassLength
   extend Forwardable
 
   def_delegator :handler_instance, :graceful
@@ -131,8 +131,15 @@ class ProcessBot::Process
   def send_control_command(command, **command_options)
     logger.logs "Sending #{command} command"
     response = client.send_command(command: command, options: options.options.merge(command_options))
-    raise "No response from ProcessBot while sending #{command}" if response == :nil
+
+    if response == :nil
+      handle_missing_control_command_response(command)
+      return if options[:ignore_no_process_bot]
+
+      raise "No response from ProcessBot while sending #{command}"
+    end
   rescue Errno::ECONNREFUSED => e
+    handle_missing_control_command_response(command)
     raise e unless options[:ignore_no_process_bot]
   end
 
@@ -272,6 +279,65 @@ class ProcessBot::Process
     logger.logs "Process stopped - starting again after 1 sec"
     sleep 1
     start_runner_instance
+  end
+
+  def handle_missing_control_command_response(command)
+    return unless command == "stop"
+
+    matching_processes = matching_process_bot_processes
+    log_missing_control_response_diagnostics(matching_processes)
+    force_stop_process_bot_if_configured(matching_processes)
+  end
+
+  def log_missing_control_response_diagnostics(matching_processes)
+    logger.logs "Control command response missing; attempting diagnostics for application=#{options[:application].inspect} id=#{options[:id].inspect}"
+    logger.logs "Matching process_bot lines:\n#{matching_process_bot_processes_text(matching_processes)}"
+  end
+
+  def matching_process_bot_processes_text(lines)
+    return "(none)" if lines.empty?
+
+    lines.join("\n")
+  end
+
+  def matching_process_bot_processes
+    ps_output = Knj::Os.shellcmd("ps -eo pid,args")
+
+    ps_output
+      .to_s
+      .split("\n")
+      .select { |line| process_bot_process_line_matches?(line) }
+  end
+
+  def process_bot_process_line_matches?(line)
+    line.include?("ProcessBot {") &&
+      line.include?("\"application\":\"#{options[:application]}\"") &&
+      line.include?("\"id\":\"#{options[:id]}\"")
+  end
+
+  def force_stop_process_bot_if_configured(matching_processes)
+    return unless truthy_option?(:force_stop_on_no_response)
+
+    matching_processes.each do |line|
+      pid = line.strip.split(/\s+/, 2).first
+      next unless pid&.match?(/\A\d+\z/)
+
+      logger.logs "Force-stopping unresponsive process_bot PID #{pid}"
+      Process.kill("TERM", Integer(pid, 10))
+    rescue Errno::ESRCH
+      logger.logs "Process bot PID #{pid} already gone during force stop"
+    end
+  end
+
+  def truthy_option?(key)
+    value = options[key]
+    return false if value.nil?
+    return value if value == true || value == false
+
+    normalized = value.to_s.strip.downcase
+    return false if normalized == "false" || normalized == "0" || normalized == ""
+
+    true
   end
 
 private
