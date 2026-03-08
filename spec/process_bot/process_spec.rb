@@ -57,6 +57,28 @@ describe ProcessBot::Process do
 
       ProcessBot::Process.new(options).execute!
     end
+
+    it "ignores missing response on stop when ignore_no_process_bot is enabled" do
+      options = ProcessBot::Options.new(command: "stop", port: 7050, ignore_no_process_bot: true)
+      process = ProcessBot::Process.new(options)
+
+      expect(process.client).to receive(:send_command).and_return(:nil)
+
+      expect do
+        process.execute!
+      end.not_to raise_error
+    end
+
+    it "raises on missing response on stop when ignore_no_process_bot is disabled" do
+      options = ProcessBot::Options.new(command: "stop", port: 7050)
+      process = ProcessBot::Process.new(options)
+
+      expect(process.client).to receive(:send_command).and_return(:nil)
+
+      expect do
+        process.execute!
+      end.to raise_error(RuntimeError, "No response from ProcessBot while sending stop")
+    end
   end
 
   describe "#update_process_title" do
