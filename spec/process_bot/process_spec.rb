@@ -79,6 +79,50 @@ describe ProcessBot::Process do
         process.execute!
       end.to raise_error(RuntimeError, "No response from ProcessBot while sending stop")
     end
+
+    it "force-stops matching process bot pid on nil response when configured" do
+      options = ProcessBot::Options.new(
+        command: "stop",
+        port: 7050,
+        application: "peak-flow",
+        id: "peakflow-ports",
+        ignore_no_process_bot: true,
+        force_stop_on_no_response: true
+      )
+      process = ProcessBot::Process.new(options)
+
+      expect(process.client).to receive(:send_command).and_return(:nil)
+      expect(Knj::Os).to receive(:shellcmd).with("ps -eo pid,args").and_return(
+        "123 ProcessBot {\"application\":\"peak-flow\",\"id\":\"peakflow-ports\"}\n" \
+          "456 ProcessBot {\"application\":\"peak-flow\",\"id\":\"other\"}"
+      )
+      expect(Process).to receive(:kill).with("TERM", 123)
+
+      expect do
+        process.execute!
+      end.not_to raise_error
+    end
+
+    it "does not force-stop process bot pid on nil response when not configured" do
+      options = ProcessBot::Options.new(
+        command: "stop",
+        port: 7050,
+        application: "peak-flow",
+        id: "peakflow-ports",
+        ignore_no_process_bot: true
+      )
+      process = ProcessBot::Process.new(options)
+
+      expect(process.client).to receive(:send_command).and_return(:nil)
+      expect(Knj::Os).to receive(:shellcmd).with("ps -eo pid,args").and_return(
+        "123 ProcessBot {\"application\":\"peak-flow\",\"id\":\"peakflow-ports\"}"
+      )
+      expect(Process).not_to receive(:kill)
+
+      expect do
+        process.execute!
+      end.not_to raise_error
+    end
   end
 
   describe "#update_process_title" do
