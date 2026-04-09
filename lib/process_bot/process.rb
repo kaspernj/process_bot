@@ -8,7 +8,6 @@ class ProcessBot::Process # rubocop:disable Metrics/ClassLength
 
   def_delegator :handler_instance, :graceful
   def_delegator :handler_instance, :graceful_no_wait
-  def_delegator :handler_instance, :stop
 
   autoload :Handlers, "#{__dir__}/process/handlers"
   autoload :Runner, "#{__dir__}/process/runner"
