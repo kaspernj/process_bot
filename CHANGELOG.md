@@ -8,8 +8,8 @@
 - Add optional Sidekiq restart overlap and a new ProcessBot restart command.
 - Guard stop-related process scanning when subprocess PID/PGID is unavailable and fail stop loudly.
 - Wait briefly for subprocess PID assignment during stop; raise if PID is still missing so stop cannot silently succeed.
-
 - Require an active runner for custom stop commands to avoid constructing a fresh runner with no PID.
+- Buffer subprocess output by line before broadcasting it to control clients so Capistrano does not receive one-character log chunks.
 
 ## [0.1.0] - 2022-04-03
 
