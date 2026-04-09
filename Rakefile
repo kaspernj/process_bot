@@ -7,6 +7,6 @@ require "rubocop/rake_task"
 RSpec::Core::RakeTask.new(:spec)
 RuboCop::RakeTask.new
 
-Dir[File.expand_path("../lib/tasks/**/*.rake", __FILE__)].each { |f| load f }
+Dir[File.expand_path("lib/tasks/**/*.rake", __dir__)].each { |f| load f }
 
 task default: %i[spec rubocop]

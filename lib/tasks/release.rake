@@ -4,7 +4,7 @@ require "pathname"
 require "rubygems/version"
 require "shellwords"
 
-class ProcessBotRubygemsRelease # rubocop:disable Lint/ConstantDefinitionInBlock
+class ProcessBotRubygemsRelease
   VERSION_FILE = Pathname.new(File.expand_path("../process_bot/version.rb", __dir__)) unless const_defined?(:VERSION_FILE)
 
   def call
@@ -60,13 +60,15 @@ private
   end
 
   def bumped_version
+    major, minor, patch = version_segments
+
     case bump_type
     when "major"
-      [version_segments[0] + 1, 0, 0].join(".")
+      format_version(major + 1, 0, 0)
     when "minor"
-      [version_segments[0], version_segments[1] + 1, 0].join(".")
+      format_version(major, minor + 1, 0)
     when "patch"
-      [version_segments[0], version_segments[1], version_segments[2] + 1].join(".")
+      format_version(major, minor, patch + 1)
     else
       raise "Unsupported BUMP=#{bump_type.inspect}. Use patch, minor, major, or VERSION=x.y.z."
     end
@@ -82,6 +84,10 @@ private
 
   def current_version
     @current_version ||= VERSION_FILE.read[/VERSION = "([^"]+)"\.freeze/, 1] || raise("Could not find current version")
+  end
+
+  def format_version(major, minor, patch)
+    [major, minor, patch].join(".")
   end
 
   def bump_version!(next_version)
