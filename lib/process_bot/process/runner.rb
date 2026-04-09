@@ -187,11 +187,22 @@ class ProcessBot::Process::Runner
   end
 
   def flush_complete_lines(type:, buffer:)
-    while (newline_index = buffer.index("\n"))
+    loop do
+      separator_index = next_separator_index(buffer)
+      break unless separator_index
+
       monitor.synchronize do
-        output(type: type, output: buffer.slice!(0, newline_index + 1))
+        output(type: type, output: buffer.slice!(0, separator_index + 1))
       end
     end
+
+    return if buffer.bytesize < READ_CHUNK_SIZE
+
+    monitor.synchronize do
+      output(type: type, output: buffer.dup)
+    end
+
+    buffer.clear
   end
 
   def flush_remaining_output(type:, buffer:)
@@ -202,5 +213,9 @@ class ProcessBot::Process::Runner
     end
 
     buffer.clear
+  end
+
+  def next_separator_index(buffer)
+    buffer.index(/[\r\n]/)
   end
 end

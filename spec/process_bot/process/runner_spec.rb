@@ -22,6 +22,36 @@ describe ProcessBot::Process::Runner do
       runner.stream_output(fake_stdout, type: :stdout)
     end
 
+    it "flushes carriage-return-delimited updates during streaming" do
+      options = ProcessBot::Options.new(application: "sample_app_name")
+      runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
+      fake_stdout = instance_double(IO)
+
+      expect(fake_stdout).to receive(:readpartial).with(ProcessBot::Process::Runner::READ_CHUNK_SIZE).and_return("step 1\rstep 2\r")
+      expect(fake_stdout).to receive(:readpartial).with(ProcessBot::Process::Runner::READ_CHUNK_SIZE).and_raise(EOFError)
+
+      expect(runner).to receive(:output).ordered.with(type: :stdout, output: "step 1\r")
+      expect(runner).to receive(:output).ordered.with(type: :stdout, output: "step 2\r")
+
+      runner.stream_output(fake_stdout, type: :stdout)
+    end
+
+    it "flushes buffered output when it reaches the read chunk size without separators" do
+      stub_const("ProcessBot::Process::Runner::READ_CHUNK_SIZE", 4)
+
+      options = ProcessBot::Options.new(application: "sample_app_name")
+      runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
+      fake_stdout = instance_double(IO)
+
+      expect(fake_stdout).to receive(:readpartial).with(ProcessBot::Process::Runner::READ_CHUNK_SIZE).and_return("ab", "cd", "ef")
+      expect(fake_stdout).to receive(:readpartial).with(ProcessBot::Process::Runner::READ_CHUNK_SIZE).and_raise(EOFError)
+
+      expect(runner).to receive(:output).ordered.with(type: :stdout, output: "abcd")
+      expect(runner).to receive(:output).ordered.with(type: :stdout, output: "ef")
+
+      runner.stream_output(fake_stdout, type: :stdout)
+    end
+
     it "flushes buffered stderr output when the PTY closes with EIO" do
       options = ProcessBot::Options.new(application: "sample_app_name")
       runner = ProcessBot::Process::Runner.new(handler_instance: nil, handler_name: "custom", command: nil, logger: nil, options: options)
