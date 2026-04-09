@@ -246,6 +246,22 @@ describe ProcessBot::Process do
     end
   end
 
+  describe "#stop" do
+    it "signals the main loop to exit when no runner instances remain" do
+      options = ProcessBot::Options.new(handler: "custom")
+      process = ProcessBot::Process.new(options)
+      runner_events = process.send(:runner_events)
+
+      expect(process.handler_instance).to receive(:stop)
+
+      process.stop
+
+      expect(process.stopped).to be true
+      event = runner_events.pop(true)
+      expect(event).to include(type: :stopped, runner_instance: nil)
+    end
+  end
+
   describe "#restart" do
     it "starts a replacement sidekiq when overlap is enabled" do
       options = ProcessBot::Options.new(handler: "sidekiq", sidekiq_restart_overlap: true)
