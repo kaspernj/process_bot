@@ -100,7 +100,12 @@ private
       )
     )
 
-    run!("git", "add", VERSION_FILE.to_s)
+    sync_lockfile!
+    run!("git", "add", VERSION_FILE.to_s, "Gemfile.lock")
+  end
+
+  def sync_lockfile!
+    run!("bundle", "lock")
   end
 
   def commit!(next_version)
@@ -152,25 +157,25 @@ private
 end
 
 namespace :release do
-  desc "Release a patch version from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
+  desc "Release a patch version from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
   task :patch do
     ENV["BUMP"] = "patch"
     ProcessBotRubygemsRelease.new.call
   end
 
-  desc "Release a minor version from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
+  desc "Release a minor version from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
   task :minor do
     ENV["BUMP"] = "minor"
     ProcessBotRubygemsRelease.new.call
   end
 
-  desc "Release a major version from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
+  desc "Release a major version from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
   task :major do
     ENV["BUMP"] = "major"
     ProcessBotRubygemsRelease.new.call
   end
 
-  desc "Release the gem from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
+  desc "Release the gem from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
   task :rubygems do
     ProcessBotRubygemsRelease.new.call
   end
