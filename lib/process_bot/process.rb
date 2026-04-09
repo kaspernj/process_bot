@@ -122,6 +122,11 @@ class ProcessBot::Process # rubocop:disable Metrics/ClassLength
     logger.logs "Stop process #{args}"
     @stopped = true
     handler_instance.stop
+
+    if runner_instances.empty?
+      logger.logs "No runner instances remaining, signaling main loop to exit"
+      runner_events << {type: :stopped, runner_instance: nil}
+    end
   end
 
   def run
