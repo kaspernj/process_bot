@@ -115,7 +115,7 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 
 To install this gem onto your local machine, run `bundle exec rake install`.
 
-To bump the patch version, run `bundle exec rake release:patch`. The release task will fetch `master`, fast-forward it, bump the version, refresh and commit `Gemfile.lock`, push the release commit, build the gem, and push it to [rubygems.org](https://rubygems.org). To release a specific new version, run `VERSION=x.y.z bundle exec rake release:rubygems`.
+To bump the patch version, run bundle, commit the version bump, build, and push the gem, run `bundle exec rake release:patch`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 

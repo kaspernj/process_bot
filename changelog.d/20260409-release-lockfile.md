@@ -1,1 +1,0 @@
-- Include refreshed `Gemfile.lock` in `rake release:*` release commits so patch/minor/major releases do not leave an uncommitted lockfile behind.
