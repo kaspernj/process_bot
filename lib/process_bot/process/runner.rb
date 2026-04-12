@@ -3,8 +3,6 @@ require "knjrbfw"
 class ProcessBot::Process::Runner
   attr_reader :command, :exit_status, :handler_instance, :handler_name, :logger, :monitor, :options, :pid, :stop_time, :subprocess_pid
 
-  READ_CHUNK_SIZE = 4096
-
   def initialize(command:, handler_instance:, handler_name:, logger:, options:)
     @command = command
     @handler_instance = handler_instance
@@ -16,17 +14,6 @@ class ProcessBot::Process::Runner
 
   def output(output:, type:)
     logger.log(output, type: type)
-  end
-
-  def stream_output(io, type:)
-    buffer = +""
-
-    loop do
-      buffer << io.readpartial(READ_CHUNK_SIZE)
-      flush_complete_lines(type: type, buffer: buffer)
-    end
-  rescue EOFError, Errno::EIO
-    flush_remaining_output(type: type, buffer: buffer)
   end
 
   def running?
@@ -44,7 +31,13 @@ class ProcessBot::Process::Runner
       logger.logs "Command running with PID #{pid}: #{command}"
 
       stdout_reader_thread = Thread.new do
-        stream_output(stdout, type: :stdout)
+        stdout.each_char do |chunk|
+          monitor.synchronize do
+            output(type: :stdout, output: chunk)
+          end
+        end
+      rescue Errno::EIO
+        # Process done
       ensure
         status = Process::Status.wait(subprocess_pid, 0)
 
@@ -53,7 +46,11 @@ class ProcessBot::Process::Runner
       end
 
       stderr_reader_thread = Thread.new do
-        stream_output(stderr_reader, type: :stderr)
+        stderr_reader.each_char do |chunk|
+          monitor.synchronize do
+            output(type: :stderr, output: chunk)
+          end
+        end
       end
 
       find_sidekiq_pid if handler_name == "sidekiq"
@@ -184,38 +181,5 @@ class ProcessBot::Process::Runner
 
       break
     end
-  end
-
-  def flush_complete_lines(type:, buffer:)
-    loop do
-      separator_index = next_separator_index(buffer)
-      break unless separator_index
-
-      monitor.synchronize do
-        output(type: type, output: buffer.slice!(0, separator_index + 1))
-      end
-    end
-
-    return if buffer.bytesize < READ_CHUNK_SIZE
-
-    monitor.synchronize do
-      output(type: type, output: buffer.dup)
-    end
-
-    buffer.clear
-  end
-
-  def flush_remaining_output(type:, buffer:)
-    return if buffer.empty?
-
-    monitor.synchronize do
-      output(type: type, output: buffer.dup)
-    end
-
-    buffer.clear
-  end
-
-  def next_separator_index(buffer)
-    buffer.index(/[\r\n]/)
   end
 end

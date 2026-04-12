@@ -60,18 +60,7 @@ private
   end
 
   def bumped_version
-    major, minor, patch = version_segments
-
-    case bump_type
-    when "major"
-      format_version(major + 1, 0, 0)
-    when "minor"
-      format_version(major, minor + 1, 0)
-    when "patch"
-      format_version(major, minor, patch + 1)
-    else
-      raise "Unsupported BUMP=#{bump_type.inspect}. Use patch, minor, major, or VERSION=x.y.z."
-    end
+    build_version(*bumped_version_segments)
   end
 
   def version_segments
@@ -86,7 +75,22 @@ private
     @current_version ||= VERSION_FILE.read[/VERSION = "([^"]+)"\.freeze/, 1] || raise("Could not find current version")
   end
 
-  def format_version(major, minor, patch)
+  def bumped_version_segments
+    segments = version_segments
+
+    case bump_type
+    when "major"
+      [segments[0] + 1, 0, 0]
+    when "minor"
+      [segments[0], segments[1] + 1, 0]
+    when "patch"
+      [segments[0], segments[1], segments[2] + 1]
+    else
+      raise "Unsupported BUMP=#{bump_type.inspect}. Use patch, minor, major, or VERSION=x.y.z."
+    end
+  end
+
+  def build_version(major, minor, patch)
     [major, minor, patch].join(".")
   end
 
@@ -100,12 +104,7 @@ private
       )
     )
 
-    sync_lockfile!
-    run!("git", "add", VERSION_FILE.to_s, "Gemfile.lock")
-  end
-
-  def sync_lockfile!
-    run!("bundle", "lock")
+    run!("git", "add", VERSION_FILE.to_s)
   end
 
   def commit!(next_version)
@@ -157,25 +156,25 @@ private
 end
 
 namespace :release do
-  desc "Release a patch version from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
+  desc "Release a patch version from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
   task :patch do
     ENV["BUMP"] = "patch"
     ProcessBotRubygemsRelease.new.call
   end
 
-  desc "Release a minor version from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
+  desc "Release a minor version from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
   task :minor do
     ENV["BUMP"] = "minor"
     ProcessBotRubygemsRelease.new.call
   end
 
-  desc "Release a major version from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
+  desc "Release a major version from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
   task :major do
     ENV["BUMP"] = "major"
     ProcessBotRubygemsRelease.new.call
   end
 
-  desc "Release the gem from master by fetching, fast-forward merging, bumping version, refreshing Gemfile.lock, pushing, and publishing"
+  desc "Release the gem from master by fetching, fast-forward merging, bumping version, pushing, and publishing"
   task :rubygems do
     ProcessBotRubygemsRelease.new.call
   end
