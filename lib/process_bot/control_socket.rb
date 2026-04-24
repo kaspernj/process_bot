@@ -28,6 +28,8 @@ class ProcessBot::ControlSocket
   end
 
   def start_tcp_server
+    ensure_no_duplicate_id!
+
     used_ports = used_process_bot_ports
     attempts = 0
 
@@ -48,6 +50,50 @@ class ProcessBot::ControlSocket
         raise e
       end
     end
+  end
+
+  # Prevent a second process_bot with the same `--id` under the same
+  # application from starting while the first is still alive. The
+  # `start_tcp_server` loop silently drifts to a free port when the
+  # requested one is in use; drift is intentional when unrelated
+  # process_bots share a host, but it's a bug when a Capistrano deploy's
+  # stop failed to clean up the previous release's process_bot and the
+  # new release's start drifts around the zombie. Scope the match by
+  # `application_basename` (derived from `release_path`) so that two
+  # unrelated apps on the same host can reuse a generic id like
+  # `sidekiq-main` without falsely blocking each other.
+  def ensure_no_duplicate_id!
+    id = options[:id]
+    return if id.nil? || id.to_s.strip.empty?
+
+    duplicates = find_duplicate_id_entries(id.to_s, safe_application_basename)
+    return if duplicates.empty?
+
+    raise duplicate_id_error_message(id, duplicates)
+  end
+
+  def find_duplicate_id_entries(id, basename)
+    running_process_bot_entries.select do |entry|
+      entry[:id] == id && entry[:application_basename] == basename
+    end
+  end
+
+  def duplicate_id_error_message(id, duplicates)
+    details = duplicates.map { |entry| "PID #{entry[:pid]} on port #{entry[:port]}" }.join(", ")
+    example_port = duplicates.first[:port]
+    handler = options.fetch(:handler, "custom")
+    release_path = options.fetch(:release_path, "/")
+
+    "Another process_bot with id=#{id.inspect} is already running for this application (#{details}). " \
+      "Stop it (e.g. `process_bot --command stop --port #{example_port} --id #{id} " \
+      "--handler #{handler} --release-path #{release_path}`) " \
+      "or kill that PID before starting a new instance."
+  end
+
+  def safe_application_basename
+    options.application_basename
+  rescue KeyError
+    nil
   end
 
   def actually_start_tcp_server(host, port)
@@ -169,7 +215,14 @@ class ProcessBot::ControlSocket
   end
 
   def used_process_bot_ports
-    ports = []
+    running_process_bot_entries.filter_map { |entry| entry[:port] }.uniq
+  end
+
+  # Parsed `{application_basename:, id:, pid:, port:}` entries for every
+  # running process_bot visible to `ps`, extracted from each instance's
+  # JSON process title.
+  def running_process_bot_entries
+    entries = []
 
     Knj::Unix_proc.list("grep" => "ProcessBot") do |process|
       process_command = process.data.fetch("cmd")
@@ -182,10 +235,15 @@ class ProcessBot::ControlSocket
         next
       end
 
-      port = process_data["port"]
-      ports << port.to_i if port
+      pid = process.data["pid"] || process.pid
+      entries << {
+        application_basename: process_data["application_basename"],
+        id: process_data["id"]&.to_s,
+        pid: pid,
+        port: process_data["port"]&.to_i
+      }
     end
 
-    ports.uniq
+    entries
   end
 end

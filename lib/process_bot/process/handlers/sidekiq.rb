@@ -56,8 +56,8 @@ class ProcessBot::Process::Handlers::Sidekiq
     update_current_pid(new_pid)
   end
 
-  def fetch(*args, **opts)
-    options.fetch(*args, **opts)
+  def fetch(*, **)
+    options.fetch(*, **)
   end
 
   def logger
@@ -70,8 +70,8 @@ class ProcessBot::Process::Handlers::Sidekiq
     set(key, value)
   end
 
-  def set(*args, **opts)
-    options.set(*args, **opts)
+  def set(*, **)
+    options.set(*, **)
   end
 
   def send_tstp_or_return
