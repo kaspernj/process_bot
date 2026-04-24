@@ -47,16 +47,16 @@ describe ProcessBot::ControlSocket do
   end
 
   describe "#ensure_no_duplicate_id!" do
-    it "raises when another ProcessBot with the same id is already running" do
-      options = ProcessBot::Options.new(handler: "custom", id: "my-app", port: 9095, release_path: "/srv/my-app")
+    it "raises when another ProcessBot with the same id and application_basename is already running" do
+      options = ProcessBot::Options.new(handler: "custom", id: "sidekiq-main", port: 9095, release_path: "/srv/my-app/releases/20260424000000")
       process = ProcessBot::Process.new(options)
       control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
 
       allow(control_socket).to receive(:running_process_bot_entries).and_return([
-                                                                                  {id: "my-app", pid: 12_345, port: 9095}
+                                                                                  {application_basename: "my-app", id: "sidekiq-main", pid: 12_345, port: 9095}
                                                                                 ])
 
-      expect { control_socket.start_tcp_server }.to raise_error(/Another process_bot with id="my-app" is already running/)
+      expect { control_socket.start_tcp_server }.to raise_error(/Another process_bot with id="sidekiq-main" is already running/)
     end
 
     it "does not raise when running instances have different ids" do
@@ -68,7 +68,22 @@ describe ProcessBot::ControlSocket do
 
       fake_server = instance_double(TCPServer, close: true)
       allow(control_socket).to receive_messages(running_process_bot_entries: [
-                                                  {id: "other-app", pid: 12_345, port: 9095}
+                                                  {application_basename: "my-app", id: "other-app", pid: 12_345, port: 9095}
+                                                ], actually_start_tcp_server: fake_server)
+
+      expect { control_socket.start_tcp_server }.not_to raise_error
+    end
+
+    it "does not raise when another app on the same host shares the id" do
+      options = ProcessBot::Options.new(handler: "custom", id: "sidekiq-main", port: 9095, release_path: "/srv/app-a/releases/20260424000000")
+      process = ProcessBot::Process.new(options)
+      control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
+
+      allow(control_socket).to receive(:run_client_loop)
+
+      fake_server = instance_double(TCPServer, close: true)
+      allow(control_socket).to receive_messages(running_process_bot_entries: [
+                                                  {application_basename: "app-b", id: "sidekiq-main", pid: 12_345, port: 9095}
                                                 ], actually_start_tcp_server: fake_server)
 
       expect { control_socket.start_tcp_server }.not_to raise_error
@@ -83,7 +98,7 @@ describe ProcessBot::ControlSocket do
 
       fake_server = instance_double(TCPServer, close: true)
       allow(control_socket).to receive_messages(running_process_bot_entries: [
-                                                  {id: "my-app", pid: 12_345, port: 9095}
+                                                  {application_basename: "my-app", id: "my-app", pid: 12_345, port: 9095}
                                                 ], actually_start_tcp_server: fake_server)
 
       expect { control_socket.start_tcp_server }.not_to raise_error

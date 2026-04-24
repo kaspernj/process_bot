@@ -163,9 +163,29 @@ class ProcessBot::Process # rubocop:disable Metrics/ClassLength
   end
 
   def update_process_title
-    process_args = {application: options[:application], handler: handler_name, id: options[:id], pid: current_pid, port: port}
+    process_args = {
+      application: options[:application],
+      application_basename: safe_application_basename,
+      handler: handler_name,
+      id: options[:id],
+      pid: current_pid,
+      port: port
+    }
     @current_process_title = "ProcessBot #{JSON.generate(process_args)}"
     Process.setproctitle(current_process_title)
+  end
+
+  # Capistrano-style release paths (`.../<app>/releases/<timestamp>`)
+  # resolve to a stable per-app basename like `awesome-tasks` that is
+  # consistent across deploys of the same app and distinct across apps
+  # sharing a host. `ControlSocket#ensure_no_duplicate_id!` uses it to
+  # scope the duplicate-id guard by `(application_basename, id)` so an
+  # unrelated app on the same host can safely reuse an id like
+  # `sidekiq-main`. Returns nil when release_path isn't set.
+  def safe_application_basename
+    options.application_basename
+  rescue KeyError
+    nil
   end
 
   def with_control_command

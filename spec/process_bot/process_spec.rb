@@ -133,7 +133,11 @@ describe ProcessBot::Process do
       options.events.call(:on_process_started, pid: 123)
       options.events.call(:on_socket_opened, port: 7052)
 
-      expect(process.current_process_title).to eq "ProcessBot {\"application\":\"test_app\",\"handler\":\"sidekiq\",\"id\":null,\"pid\":123,\"port\":7052}"
+      expected = "ProcessBot " \
+        "{\"application\":\"test_app\",\"application_basename\":null,\"handler\":\"sidekiq\"," \
+        "\"id\":null,\"pid\":123,\"port\":7052}"
+
+      expect(process.current_process_title).to eq expected
     end
   end
 
