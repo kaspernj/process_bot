@@ -28,6 +28,8 @@ class ProcessBot::ControlSocket
   end
 
   def start_tcp_server
+    ensure_no_duplicate_id!
+
     used_ports = used_process_bot_ports
     attempts = 0
 
@@ -48,6 +50,32 @@ class ProcessBot::ControlSocket
         raise e
       end
     end
+  end
+
+  # Prevent a second process_bot with the same `--id` from starting while
+  # the first is still alive. The `start_tcp_server` loop silently drifts
+  # to a free port when the requested one is in use; that drift is
+  # intentional when several unrelated process_bots share a host, but it
+  # is a bug when a Capistrano deploy's stop failed to clean up the
+  # previous release's process_bot. Drifting there creates two
+  # process_bots with the same id on different ports, the deploy's
+  # hardcoded `--port` stop only ever reaches one of them, and the other
+  # keeps auto-restarting the previous release's backend indefinitely.
+  # Fail the start loudly in that case so the root cause is visible
+  # instead of silently drifting and accumulating zombies.
+  def ensure_no_duplicate_id!
+    id = options[:id]
+    return if id.nil? || id.to_s.strip.empty?
+
+    duplicates = running_process_bot_entries.select { |entry| entry[:id] == id.to_s }
+    return if duplicates.empty?
+
+    details = duplicates.map { |entry| "PID #{entry[:pid]} on port #{entry[:port]}" }.join(", ")
+
+    raise "Another process_bot with id=#{id.inspect} is already running (#{details}). " \
+      "Stop it (e.g. `process_bot --command stop --port #{duplicates.first[:port]} --id #{id} " \
+      "--handler #{options.fetch(:handler, "custom")} --release-path #{options.fetch(:release_path, "/")}`) " \
+      "or kill that PID before starting a new instance."
   end
 
   def actually_start_tcp_server(host, port)
@@ -169,7 +197,13 @@ class ProcessBot::ControlSocket
   end
 
   def used_process_bot_ports
-    ports = []
+    running_process_bot_entries.filter_map { |entry| entry[:port] }.uniq
+  end
+
+  # Parsed `{pid:, id:, port:}` entries for every running process_bot
+  # visible to `ps`, extracted from each instance's JSON process title.
+  def running_process_bot_entries
+    entries = []
 
     Knj::Unix_proc.list("grep" => "ProcessBot") do |process|
       process_command = process.data.fetch("cmd")
@@ -182,10 +216,10 @@ class ProcessBot::ControlSocket
         next
       end
 
-      port = process_data["port"]
-      ports << port.to_i if port
+      pid = process.data["pid"] || process.pid
+      entries << {id: process_data["id"]&.to_s, pid: pid, port: process_data["port"]&.to_i}
     end
 
-    ports.uniq
+    entries
   end
 end
