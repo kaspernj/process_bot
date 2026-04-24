@@ -25,8 +25,8 @@ class ProcessBot::Process::Handlers::Custom
     !value || value == "false"
   end
 
-  def fetch(*args, **opts)
-    options.fetch(*args, **opts)
+  def fetch(*, **)
+    options.fetch(*, **)
   end
 
   def logger
@@ -39,8 +39,8 @@ class ProcessBot::Process::Handlers::Custom
     set(key, value)
   end
 
-  def set(*args, **opts)
-    options.set(*args, **opts)
+  def set(*, **)
+    options.set(*, **)
   end
 
   def start_command

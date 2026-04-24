@@ -70,11 +70,18 @@ class ProcessBot::ControlSocket
     duplicates = running_process_bot_entries.select { |entry| entry[:id] == id.to_s }
     return if duplicates.empty?
 
-    details = duplicates.map { |entry| "PID #{entry[:pid]} on port #{entry[:port]}" }.join(", ")
+    raise duplicate_id_error_message(id, duplicates)
+  end
 
-    raise "Another process_bot with id=#{id.inspect} is already running (#{details}). " \
-      "Stop it (e.g. `process_bot --command stop --port #{duplicates.first[:port]} --id #{id} " \
-      "--handler #{options.fetch(:handler, "custom")} --release-path #{options.fetch(:release_path, "/")}`) " \
+  def duplicate_id_error_message(id, duplicates)
+    details = duplicates.map { |entry| "PID #{entry[:pid]} on port #{entry[:port]}" }.join(", ")
+    example_port = duplicates.first[:port]
+    handler = options.fetch(:handler, "custom")
+    release_path = options.fetch(:release_path, "/")
+
+    "Another process_bot with id=#{id.inspect} is already running (#{details}). " \
+      "Stop it (e.g. `process_bot --command stop --port #{example_port} --id #{id} " \
+      "--handler #{handler} --release-path #{release_path}`) " \
       "or kill that PID before starting a new instance."
   end
 

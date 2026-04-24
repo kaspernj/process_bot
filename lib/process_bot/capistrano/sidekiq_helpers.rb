@@ -23,12 +23,12 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     fetch(:sidekiq_log)
   end
 
-  def switch_user(role, &block)
+  def switch_user(role, &)
     su_user = sidekiq_user(role)
     if su_user == role.user
       yield
     else
-      as su_user, &block
+      as(su_user, &)
     end
   end
 
