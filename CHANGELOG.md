@@ -1,5 +1,4 @@
 ## [Unreleased]
-- Fail `start_tcp_server` when another ProcessBot with the same `--id` is already running instead of silently drifting to a new port. Port drift across unrelated services is still supported; drift for a duplicate id was the root cause of Capistrano deploys leaving a stale previous-release ProcessBot alive on a drifted port while every subsequent `stop --port X` hit the wrong instance.
 - Stop accepting new control commands during shutdown so in-flight responses complete reliably.
 - Stream ProcessBot logs to connected control clients for Capistrano output.
 - Sanitize broadcast log output to keep JSON encoding safe.
