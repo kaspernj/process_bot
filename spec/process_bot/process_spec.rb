@@ -103,6 +103,30 @@ describe ProcessBot::Process do
       end.not_to raise_error
     end
 
+    it "force-stops legacy matching process bot pid by id and port on nil response when configured" do
+      options = ProcessBot::Options.new(
+        command: "stop",
+        port: 9095,
+        application: "brainbound",
+        id: "brainbound-backend",
+        ignore_no_process_bot: true,
+        force_stop_on_no_response: true,
+        release_path: "/home/dev/brainbound/releases/20260520145138/backend"
+      )
+      process = ProcessBot::Process.new(options)
+
+      expect(process.client).to receive(:send_command).and_return(:nil)
+      expect(Knj::Os).to receive(:shellcmd).with("ps -eo pid,args").and_return(
+        "123 ProcessBot {\"application\":null,\"handler\":\"custom\",\"id\":\"brainbound-backend\",\"pid\":null,\"port\":9095}\n" \
+          "456 ProcessBot {\"application\":null,\"handler\":\"custom\",\"id\":\"brainbound-backend\",\"pid\":null,\"port\":9096}"
+      )
+      expect(Process).to receive(:kill).with("TERM", 123)
+
+      expect do
+        process.execute!
+      end.not_to raise_error
+    end
+
     it "does not force-stop process bot pid on nil response when not configured" do
       options = ProcessBot::Options.new(
         command: "stop",

@@ -334,9 +334,36 @@ class ProcessBot::Process # rubocop:disable Metrics/ClassLength
   end
 
   def process_bot_process_line_matches?(line)
-    line.include?("ProcessBot {") &&
-      line.include?("\"application\":\"#{options[:application]}\"") &&
-      line.include?("\"id\":\"#{options[:id]}\"")
+    process_data = process_bot_data_from_line(line)
+    return false unless process_data
+    return false unless process_data["id"]&.to_s == options[:id].to_s
+
+    process_bot_application_matches?(process_data) || legacy_process_bot_port_matches?(process_data)
+  end
+
+  def process_bot_data_from_line(line)
+    match = line.match(/ProcessBot (\{.+\})/)
+    return unless match
+
+    JSON.parse(match[1])
+  rescue JSON::ParserError
+    nil
+  end
+
+  def process_bot_application_matches?(process_data)
+    application = options[:application]
+    return true if application && process_data["application"] == application
+
+    basename = safe_application_basename
+    basename && process_data["application_basename"] == basename
+  end
+
+  def legacy_process_bot_port_matches?(process_data)
+    return false unless process_data["port"] && options[:port]
+
+    process_data["application"].nil? &&
+      process_data["application_basename"].nil? &&
+      process_data["port"].to_i == options[:port].to_i
   end
 
   def force_stop_process_bot_if_configured(matching_processes)

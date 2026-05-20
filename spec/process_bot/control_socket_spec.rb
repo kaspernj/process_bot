@@ -53,10 +53,34 @@ describe ProcessBot::ControlSocket do
       control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
 
       allow(control_socket).to receive(:running_process_bot_entries).and_return([
-                                                                                  {application_basename: "my-app", id: "sidekiq-main", pid: 12_345, port: 9095}
+                                                                                  {
+                                                                                    application: nil,
+                                                                                    application_basename: "my-app",
+                                                                                    id: "sidekiq-main",
+                                                                                    pid: 12_345,
+                                                                                    port: 9095
+                                                                                  }
                                                                                 ])
 
       expect { control_socket.start_tcp_server }.to raise_error(/Another process_bot with id="sidekiq-main" is already running/)
+    end
+
+    it "raises for a legacy ProcessBot with the same id and control port" do
+      options = ProcessBot::Options.new(handler: "custom", id: "brainbound-backend", port: 9095, release_path: "/srv/brainbound/releases/20260424000000")
+      process = ProcessBot::Process.new(options)
+      control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
+
+      allow(control_socket).to receive(:running_process_bot_entries).and_return([
+                                                                                  {
+                                                                                    application: nil,
+                                                                                    application_basename: nil,
+                                                                                    id: "brainbound-backend",
+                                                                                    pid: 12_345,
+                                                                                    port: 9095
+                                                                                  }
+                                                                                ])
+
+      expect { control_socket.start_tcp_server }.to raise_error(/Another process_bot with id="brainbound-backend" is already running/)
     end
 
     it "does not raise when running instances have different ids" do
@@ -68,7 +92,7 @@ describe ProcessBot::ControlSocket do
 
       fake_server = instance_double(TCPServer, close: true)
       allow(control_socket).to receive_messages(running_process_bot_entries: [
-                                                  {application_basename: "my-app", id: "other-app", pid: 12_345, port: 9095}
+                                                  {application: nil, application_basename: "my-app", id: "other-app", pid: 12_345, port: 9095}
                                                 ], actually_start_tcp_server: fake_server)
 
       expect { control_socket.start_tcp_server }.not_to raise_error
@@ -83,7 +107,22 @@ describe ProcessBot::ControlSocket do
 
       fake_server = instance_double(TCPServer, close: true)
       allow(control_socket).to receive_messages(running_process_bot_entries: [
-                                                  {application_basename: "app-b", id: "sidekiq-main", pid: 12_345, port: 9095}
+                                                  {application: nil, application_basename: "app-b", id: "sidekiq-main", pid: 12_345, port: 9095}
+                                                ], actually_start_tcp_server: fake_server)
+
+      expect { control_socket.start_tcp_server }.not_to raise_error
+    end
+
+    it "does not raise for a legacy ProcessBot with the same id on a different control port" do
+      options = ProcessBot::Options.new(handler: "custom", id: "brainbound-backend", port: 9095, release_path: "/srv/brainbound/releases/20260424000000")
+      process = ProcessBot::Process.new(options)
+      control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
+
+      allow(control_socket).to receive(:run_client_loop)
+
+      fake_server = instance_double(TCPServer, close: true)
+      allow(control_socket).to receive_messages(running_process_bot_entries: [
+                                                  {application: nil, application_basename: nil, id: "brainbound-backend", pid: 12_345, port: 9096}
                                                 ], actually_start_tcp_server: fake_server)
 
       expect { control_socket.start_tcp_server }.not_to raise_error
@@ -98,7 +137,7 @@ describe ProcessBot::ControlSocket do
 
       fake_server = instance_double(TCPServer, close: true)
       allow(control_socket).to receive_messages(running_process_bot_entries: [
-                                                  {application_basename: "my-app", id: "my-app", pid: 12_345, port: 9095}
+                                                  {application: nil, application_basename: "my-app", id: "my-app", pid: 12_345, port: 9095}
                                                 ], actually_start_tcp_server: fake_server)
 
       expect { control_socket.start_tcp_server }.not_to raise_error
