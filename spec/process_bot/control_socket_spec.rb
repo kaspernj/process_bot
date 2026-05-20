@@ -83,6 +83,24 @@ describe ProcessBot::ControlSocket do
       expect { control_socket.start_tcp_server }.to raise_error(/Another process_bot with id="brainbound-backend" is already running/)
     end
 
+    it "raises for a pre-application-basename ProcessBot with application and the same id and control port" do
+      options = ProcessBot::Options.new(handler: "custom", id: "brainbound-backend", port: 9095, release_path: "/srv/brainbound/releases/20260424000000")
+      process = ProcessBot::Process.new(options)
+      control_socket = ProcessBot::ControlSocket.new(options: options, process: process)
+
+      allow(control_socket).to receive(:running_process_bot_entries).and_return([
+                                                                                  {
+                                                                                    application: "brainbound",
+                                                                                    application_basename: nil,
+                                                                                    id: "brainbound-backend",
+                                                                                    pid: 12_345,
+                                                                                    port: 9095
+                                                                                  }
+                                                                                ])
+
+      expect { control_socket.start_tcp_server }.to raise_error(/Another process_bot with id="brainbound-backend" is already running/)
+    end
+
     it "does not raise when running instances have different ids" do
       options = ProcessBot::Options.new(handler: "custom", id: "my-app", port: 9095, release_path: "/srv/my-app")
       process = ProcessBot::Process.new(options)

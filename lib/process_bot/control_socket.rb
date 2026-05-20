@@ -82,11 +82,7 @@ class ProcessBot::ControlSocket
     return false unless entry[:id] == id
     return true if basename && entry[:application_basename] == basename
 
-    legacy_entry_without_application?(entry) && same_control_port?(entry)
-  end
-
-  def legacy_entry_without_application?(entry)
-    entry[:application].nil? && entry[:application_basename].nil?
+    entry[:application_basename].nil? && same_control_port?(entry)
   end
 
   def same_control_port?(entry)

@@ -361,8 +361,7 @@ class ProcessBot::Process # rubocop:disable Metrics/ClassLength
   def legacy_process_bot_port_matches?(process_data)
     return false unless process_data["port"] && options[:port]
 
-    process_data["application"].nil? &&
-      process_data["application_basename"].nil? &&
+    process_data["application_basename"].nil? &&
       process_data["port"].to_i == options[:port].to_i
   end
 

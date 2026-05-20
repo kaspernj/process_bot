@@ -41,14 +41,12 @@ class ProcessBot::Options
 
   def application_basename_from_release_path
     app_path_parts = release_path.split("/")
+    deployment_marker_index = [
+      app_path_parts.rindex("releases"),
+      app_path_parts.rindex("current")
+    ].compact.max
 
-    if (releases_index = app_path_parts.index("releases"))
-      return app_path_parts[0...releases_index].last
-    end
-
-    if (current_index = app_path_parts.index("current"))
-      return app_path_parts[0...current_index].last
-    end
+    return app_path_parts[0...deployment_marker_index].last if deployment_marker_index
 
     app_path_parts.last
   end

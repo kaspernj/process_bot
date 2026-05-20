@@ -25,5 +25,11 @@ describe ProcessBot::Options do
 
       expect(options.application_basename).to eq "sample_app_name"
     end
+
+    it "returns the application basename from the nearest deployment marker" do
+      options = ProcessBot::Options.new(release_path: "/srv/current/sample_app_name/current/backend")
+
+      expect(options.application_basename).to eq "sample_app_name"
+    end
   end
 end
