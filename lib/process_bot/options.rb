@@ -36,17 +36,19 @@ class ProcessBot::Options
   end
 
   def application_basename
-    @application_basename ||= begin
-      app_path_parts = release_path.split("/")
+    @application_basename ||= application_basename_from_release_path
+  end
 
-      if release_path.include?("/releases/")
-        app_path_parts.pop(2)
-      elsif release_path.end_with?("/current")
-        app_path_parts.pop
-      end
+  def application_basename_from_release_path
+    app_path_parts = release_path.split("/")
+    deployment_marker_index = [
+      app_path_parts.rindex("releases"),
+      app_path_parts.rindex("current")
+    ].compact.max
 
-      app_path_parts.last
-    end
+    return app_path_parts[0...deployment_marker_index].last if deployment_marker_index
+
+    app_path_parts.last
   end
 
   def possible_process_titles

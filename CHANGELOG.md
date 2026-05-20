@@ -1,6 +1,7 @@
 ## [Unreleased]
 - Drop Ruby 2.x support. Minimum Ruby is now 3.2; CI covers 3.2/3.3/3.4 and RuboCop's `TargetRubyVersion` follows. Shorthand anonymous forwarding (`*, **, &`) is applied where it replaces redundant `*args, **opts, &block` pass-throughs.
 - Fail `start_tcp_server` when another ProcessBot with the same `--id` is already running instead of silently drifting to a new port. Port drift across unrelated services is still supported; drift for a duplicate id was the root cause of Capistrano deploys leaving a stale previous-release ProcessBot alive on a drifted port while every subsequent `stop --port X` hit the wrong instance.
+- Treat legacy ProcessBot titles without `application_basename` as duplicates when they share the same `--id` and control port, and include the same legacy match in forced stop diagnostics.
 - Stop accepting new control commands during shutdown so in-flight responses complete reliably.
 - Stream ProcessBot logs to connected control clients for Capistrano output.
 - Sanitize broadcast log output to keep JSON encoding safe.

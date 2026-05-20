@@ -74,8 +74,21 @@ class ProcessBot::ControlSocket
 
   def find_duplicate_id_entries(id, basename)
     running_process_bot_entries.select do |entry|
-      entry[:id] == id && entry[:application_basename] == basename
+      duplicate_id_entry_matches?(entry, id, basename)
     end
+  end
+
+  def duplicate_id_entry_matches?(entry, id, basename)
+    return false unless entry[:id] == id
+    return true if basename && entry[:application_basename] == basename
+
+    entry[:application_basename].nil? && same_control_port?(entry)
+  end
+
+  def same_control_port?(entry)
+    return false unless entry[:port] && options[:port]
+
+    entry[:port].to_i == options[:port].to_i
   end
 
   def duplicate_id_error_message(id, duplicates)
@@ -235,15 +248,19 @@ class ProcessBot::ControlSocket
         next
       end
 
-      pid = process.data["pid"] || process.pid
-      entries << {
-        application_basename: process_data["application_basename"],
-        id: process_data["id"]&.to_s,
-        pid: pid,
-        port: process_data["port"]&.to_i
-      }
+      entries << process_bot_entry_from_process_data(process, process_data)
     end
 
     entries
+  end
+
+  def process_bot_entry_from_process_data(process, process_data)
+    {
+      application: process_data["application"],
+      application_basename: process_data["application_basename"],
+      id: process_data["id"]&.to_s,
+      pid: process.data["pid"] || process.pid,
+      port: process_data["port"]&.to_i
+    }
   end
 end
