@@ -71,6 +71,18 @@ namespace :process_bot do
       end
     end
 
+    desc "Start Sidekiq and ProcessBot from the currently published release"
+    task :start_current do
+      on roles fetch(:sidekiq_roles) do |role|
+        git_plugin.switch_user(role) do
+          fetch(:sidekiq_processes).times do |idx|
+            puts "Starting Sidekiq with ProcessBot #{idx} from the currently published release"
+            git_plugin.start_current_sidekiq(idx)
+          end
+        end
+      end
+    end
+
     desc "Ensure the configured number of Sidekiq ProcessBots are running (starts replacements for graceful shutdowns)"
     task :ensure_running do
       on roles fetch(:sidekiq_roles) do |role|

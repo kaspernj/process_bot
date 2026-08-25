@@ -26,7 +26,7 @@ Add to your `deploy.rb`:
 ```ruby
 after "deploy:starting", "process_bot:sidekiq:graceful"
 after "deploy:published", "process_bot:sidekiq:start"
-after "deploy:failed", "process_bot:sidekiq:start"
+after "deploy:failed", "process_bot:sidekiq:start_current"
 ```
 
 ## Usage
@@ -41,6 +41,7 @@ cap production process_bot:sidekiq:graceful
 
 ProcessBot provides these Sidekiq tasks:
 - `process_bot:sidekiq:start`
+- `process_bot:sidekiq:start_current` (starts from the currently published release after a failed deploy)
 - `process_bot:sidekiq:stop`
 - `process_bot:sidekiq:graceful` (stops fetching new jobs and waits for running jobs by default)
 - `process_bot:sidekiq:graceful_no_wait` (stops fetching new jobs and returns immediately)
