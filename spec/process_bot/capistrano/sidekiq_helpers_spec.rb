@@ -73,4 +73,29 @@ describe ProcessBot::Capistrano::SidekiqHelpers do
       expect(sidekiq_helpers_test.missing_sidekiq_indexes(3, [1])).to eq [0, 2]
     end
   end
+
+  describe "#start_current_sidekiq" do
+    it "starts Sidekiq from the release referenced by current" do
+      backend = Object.new
+      sidekiq_helpers_test = SidekiqHelpersTest.new
+
+      allow(sidekiq_helpers_test).to receive_messages(
+        backend: backend,
+        current_path: "/home/dev/sample_app/current"
+      )
+      expect(backend)
+        .to receive(:capture)
+        .with(:readlink, "-f", "/home/dev/sample_app/current")
+        .and_return("/home/dev/sample_app/releases/20260825090000\n")
+      expect(sidekiq_helpers_test)
+        .to receive(:start_sidekiq)
+        .with(
+          1,
+          sidekiq_release_path: "/home/dev/sample_app/releases/20260825090000",
+          sidekiq_release_version: "20260825090000"
+        )
+
+      sidekiq_helpers_test.start_current_sidekiq(1)
+    end
+  end
 end

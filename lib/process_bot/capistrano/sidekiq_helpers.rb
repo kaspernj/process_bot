@@ -140,12 +140,26 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     backend.capture(:echo, SSHKit.config.command_map[:bundle]).strip
   end
 
-  def start_sidekiq(idx = 0) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+  def start_current_sidekiq(idx = 0)
+    current_release_path = backend.capture(:readlink, "-f", current_path).strip
+
+    start_sidekiq(
+      idx,
+      sidekiq_release_path: current_release_path,
+      sidekiq_release_version: File.basename(current_release_path)
+    )
+  end
+
+  def start_sidekiq( # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    idx = 0,
+    sidekiq_release_path: release_path,
+    sidekiq_release_version: nil
+  )
     releases = backend.capture(:ls, "-x", releases_path).split
     releases << release_timestamp.to_s if release_timestamp
     releases.uniq
 
-    latest_release_version = releases.last
+    latest_release_version = sidekiq_release_version || releases.last
     raise "Invalid release timestamp: #{release_timestamp}" unless latest_release_version
 
     args = [
@@ -156,7 +170,7 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
       "--bundle-prefix", SSHKit.config.command_map.prefix[:bundle].join(" "),
       "--sidekiq-environment", fetch(:sidekiq_env),
       "--port", idx + 7050,
-      "--release-path", release_path
+      "--release-path", sidekiq_release_path
     ]
 
     # Use screen for logging everything which is why this is disabled
@@ -184,7 +198,8 @@ module ProcessBot::Capistrano::SidekiqHelpers # rubocop:disable Metrics/ModuleLe
     process_bot_args = args.compact.map { |arg| "\"#{arg}\"" }
 
     command = "/usr/bin/screen #{screen_args.join(" ")} " \
-      "bash -c 'cd #{release_path} && exec #{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot #{process_bot_args.join(" ")}'"
+      "bash -c 'cd #{sidekiq_release_path} && exec " \
+      "#{SSHKit.config.command_map.prefix[:bundle].join(" ")} bundle exec process_bot #{process_bot_args.join(" ")}'"
 
     puts "WARNING: A known bug prevents Sidekiq from starting when pty is set (which it is)" if fetch(:pty)
     puts "ProcessBot Sidekiq command: #{command}"
